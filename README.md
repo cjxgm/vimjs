@@ -1,5 +1,6 @@
 ﻿# vim.js - 把 vim73 的所有功能全部搬到 web 上！
-
+Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2010-2012.<br>
+Licensed under GPLv2. ABSOLUTELY NO WARRANTY! See LICENSE for details.
 
 ## !!! NOTICE !!!
 
