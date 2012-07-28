@@ -4,10 +4,10 @@ Licensed under GPLv2. ABSOLUTELY NO WARRANTY! See LICENSE for details.
 
 ## !!! NOTICE !!!
 
-English documents is coming soon...
+English documents are coming soon...
 
 
-## 待办
+## 2012-08-19 前待办
 
 * 基本编辑命令
 * 基于 local storage 的文件存储
@@ -25,4 +25,4 @@ English documents is coming soon...
 * :imap
 * :nmap
 * q 录制
-* :***s/.../.../**
+* :\*\*\*s/.../.../\*\*
