@@ -36,12 +36,13 @@ function Convas(id, w, h, font_size)
 	this.w = w;
 	this.h = h;
 	this.font_size = font_size;
-	this.setFontName("文泉驿等宽微米黑");	// default font
+	this.font_name = "文泉驿等宽微米黑";	// default font
+	this.initFontWH();		// init font's width and height
 
 	// create canvas and initialize it
 	document.write("<canvas id='" + this.id
-			+ "' width=" + parseInt(w * font_size / 2)
-			+ " height=" + parseInt(h * font_size)
+			+ "' width=" + (w * this.font_w + 4)
+			+ " height=" + (h * this.font_h + 4)
 			+ " style='cursor: text; border: solid #0f0 1px;'>"
 			+ "Sorry!</canvas>");
 	this.canvas = eval(this.id);
@@ -50,17 +51,25 @@ function Convas(id, w, h, font_size)
 
 	// create front buffer
 	this.buffer = new ConvasBuffer(w, h);
+
+	this.refresh();
 }
 
 
-Convas.prototype.setFontName = function(font_name)
+Convas.prototype.initFontWH = function()
 {
-	this.font_name = font_name;
-	this.font = this.font_size + "px " + font_name;
+	var t = document.createElement("span");
+	t.style = "font-family: " + this.font_name
+			+ "; font-size: " + this.font_size + ";";
+	t.textContent = "y";
+	document.body.appendChild(t);
+	this.font_w = t.offsetWidth  + 2;
+	this.font_h = t.offsetHeight + 2;
+	document.body.removeChild(t);
 }
 
 
-Convas.prototype.refresh()
+Convas.prototype.refresh = function()
 {
 	// Clear to black!
 	this.c.fillStyle = "#000";
@@ -71,6 +80,8 @@ Convas.prototype.refresh()
 		for (var x=0; x<this.w; x++) {
 			var clr = this.buffer.getColorAt(x, y),
 				chr = this.buffer.getCharAt (x, y);
+			if (x == this.buffer.x && y == this.buffer.y)
+				clr = ((clr>>4) | (clr<<4)) & 0xFF;
 			this._drawRect(x, y, new Color(clr >>    4)     );
 			this._drawChar(x, y, new Color(clr  & 0x0F), chr);
 		}
@@ -81,20 +92,20 @@ Convas.prototype.refresh()
 Convas.prototype._drawRect = function(x, y, clr)
 {
 	this.c.fillStyle = '' + clr;	// convert color to string
-	this.c.fillRect(x * this.font_size / 2,
-			y * this.font_size,
-			this.font_size / 2,
-			this.font_size);
+	this.c.fillRect(x*this.font_w + 2, y*this.font_h + 2 + 4,
+			this.font_w, this.font_h);
 }
 
 
 Convas.prototype._drawChar = function(x, y, clr, chr)
 {
 	this.c.fillStyle = '' + clr;	// convert color to string
-	this.c.font = (clr.h ? "bold " : "") + this.font;
+	this.c.font = (clr.h ? "bold " : "")
+			+ this.font_size + "px "
+			+ this.font_name;
 	this.c.fillText(chr,
-			x * this.font_size / 2,
-			(y + 1) * this.font_size);
+			x * this.font_w + 2,
+			(y + 1) * this.font_h + 2);
 }
 
 
@@ -119,7 +130,7 @@ ConvasBuffer.prototype.reset = function()
 {
 	this.x = 0;
 	this.y = 0;
-	this.color  = FG_R | FG_G | FG_B;
+	this.color = FG_R | FG_G | FG_B;
 
 	this.buffer = new Array(this.w * this.h);
 	for (var i=0; i<this.w*this.h; i++)
@@ -163,7 +174,7 @@ ConvasBuffer.prototype.cursorTo = function(x, y)
 ConvasBuffer.prototype.advanceCursor = function()
 {
 	if (++this.x == this.w) {
-		this,x = 0;
+		this.x = 0;
 		if (++this.y == this.h)
 			this.y--;
 	}
