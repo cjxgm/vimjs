@@ -26,7 +26,7 @@ var FG_B = (1 << 0);
 
 /**********************************************************************
  *
- * Convas : the console canvas
+ * Convas: the console canvas
  *
  */
 
@@ -38,14 +38,18 @@ function Convas(id, w, h, font_size)
 	this.font_size = font_size;
 	this.setFontName("文泉驿等宽微米黑");	// default font
 
-	// create canvas
+	// create canvas and initialize it
 	document.write("<canvas id='" + this.id
 			+ "' width=" + parseInt(w * font_size / 2)
-			+ " height=" + (h * font_size)
+			+ " height=" + parseInt(h * font_size)
 			+ " style='cursor: text; border: solid #0f0 1px;'>"
 			+ "Sorry!</canvas>");
 	this.canvas = eval(this.id);
 	this.c = this.canvas.getContext("2d");
+	this.c.textAlign = "left";
+
+	// create front buffer
+	this.buffer = new ConvasBuffer(w, h);
 }
 
 
@@ -55,9 +59,48 @@ Convas.prototype.setFontName = function(font_name)
 	this.font = this.font_size + "px " + font_name;
 }
 
+
+Convas.prototype.refresh()
+{
+	// Clear to black!
+	this.c.fillStyle = "#000";
+	this.c.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
+	// draw each character
+	for (var y=0; y<this.h; y++) {
+		for (var x=0; x<this.w; x++) {
+			var clr = this.buffer.getColorAt(x, y),
+				chr = this.buffer.getCharAt (x, y);
+			this._drawRect(x, y, new Color(clr >>    4)     );
+			this._drawChar(x, y, new Color(clr  & 0x0F), chr);
+		}
+	}
+}
+
+
+Convas.prototype._drawRect = function(x, y, clr)
+{
+	this.c.fillStyle = '' + clr;	// convert color to string
+	this.c.fillRect(x * this.font_size / 2,
+			y * this.font_size,
+			this.font_size / 2,
+			this.font_size);
+}
+
+
+Convas.prototype._drawChar = function(x, y, clr, chr)
+{
+	this.c.fillStyle = '' + clr;	// convert color to string
+	this.c.font = (clr.h ? "bold " : "") + this.font;
+	this.c.fillText(chr,
+			x * this.font_size / 2,
+			(y + 1) * this.font_size);
+}
+
+
 /**********************************************************************
  *
- * ConvasBuffer : the console buffer like windows in ncurses
+ * ConvasBuffer: the console buffer like windows in ncurses
  *
  */
 
@@ -81,6 +124,30 @@ ConvasBuffer.prototype.reset = function()
 	this.buffer = new Array(this.w * this.h);
 	for (var i=0; i<this.w*this.h; i++)
 		this.buffer[i] = [this.color, ' '];
+}
+
+
+ConvasBuffer.prototype.getColorAt = function(x, y)
+{
+	return this.buffer[y*this.w + x][0];
+}
+
+
+ConvasBuffer.prototype.setColorAt = function(x, y, clr)
+{
+	this.buffer[y*this.w + x][0] = clr;
+}
+
+
+ConvasBuffer.prototype.getCharAt = function(x, y)
+{
+	return this.buffer[y*this.w + x][1];
+}
+
+
+ConvasBuffer.prototype.setCharAt = function(x, y, chr)
+{
+	this.buffer[y*this.w + x][1] = chr;
 }
 
 
