@@ -134,6 +134,19 @@ Convas.prototype.cursorTo = function(x, y)
 }
 
 
+Convas.prototype.clear = function()
+{
+	this.buffer.reset();
+	this.refresh();
+}
+
+
+Convas.prototype.setColor = function(clr)
+{
+	this.buffer.color = clr;
+}
+
+
 Convas.prototype._resetTimerSplash = function()
 {
 	if (this.timer_splash)
