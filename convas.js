@@ -24,6 +24,10 @@ var FG_R = (1 << 2);
 var FG_G = (1 << 1);
 var FG_B = (1 << 0);
 
+var CONVAS_STATE_READY     = 0;
+var CONVAS_STATE_READ_KEY  = 1;
+var CONVAS_STATE_READ_LINE = 2;
+
 /**********************************************************************
  *
  * Convas: the console canvas
@@ -49,6 +53,12 @@ function Convas(id, w, h, font_size)
 	this.c = this.canvas.getContext("2d");
 	this.c.textAlign = "left";
 
+	// listen events
+	var me = this;
+	document.addEventListener("keypress", function(evt) {
+		me._keyPress(evt);
+	}, true);
+
 	// create front buffer
 	this.buffer = new ConvasBuffer(w, h);
 
@@ -71,28 +81,100 @@ Convas.prototype.initFontWH = function()
 
 Convas.prototype.refresh = function()
 {
+	this.show_cursor = true;
+	this._refresh();
+	this._resetTimerSplash();
+}
+
+
+// fn = function(key_code) {}
+Convas.prototype.readKey = function(is_echo, fn)
+{
+	this.state    = CONVAS_STATE_READ_KEY;
+	this.is_echo  = is_echo;
+	this.callback = fn;
+}
+
+
+// fn = function(line) {}
+Convas.prototype.readLine = function(is_echo, fn)
+{
+	this.state    = CONVAS_STATE_READ_LINE;
+	this.is_echo  = is_echo;
+	this.line_buf = "";
+	this.callback = fn;
+}
+
+
+Convas.prototype.putChar = function(ch)
+{
+	var x = this.buffer.x,
+		y = this.buffer.y;
+	this.buffer.write(ch);
+	this._refreshCharAt(x, y, false);
+	this._refreshCharAt(this.buffer.x, this.buffer.y, true);
+	this._resetTimerSplash();
+}
+
+
+Convas.prototype.write = function(text)
+{
+	for (var i in text)
+		this.putChar(text[i]);
+}
+
+
+Convas.prototype.cursorTo = function(x, y)
+{
+	var ox = this.buffer.x;
+	var oy = this.buffer.y;
+	this.buffer.cursorTo(x, y);
+	this._refreshCharAt(ox, oy, false);
+	this._refreshCharAt(this.buffer.x, this.buffer.y, true);
+}
+
+
+Convas.prototype._resetTimerSplash = function()
+{
+	if (this.timer_splash)
+		clearInterval(this.timer_splash);
+	var me = this;
+	this.timer_splash = setInterval(function() {
+		me._splashCursor();
+	}, 500);
+}
+
+
+Convas.prototype._refresh = function()
+{
 	// Clear to black!
 	this.c.fillStyle = "#000";
 	this.c.fillRect(0, 0, this.canvas.width, this.canvas.height);
 
 	// draw each character
-	for (var y=0; y<this.h; y++) {
-		for (var x=0; x<this.w; x++) {
-			var clr = this.buffer.getColorAt(x, y),
-				chr = this.buffer.getCharAt (x, y);
-			if (x == this.buffer.x && y == this.buffer.y)
-				clr = ((clr>>4) | (clr<<4)) & 0xFF;
-			this._drawRect(x, y, new Color(clr >>    4)     );
-			this._drawChar(x, y, new Color(clr  & 0x0F), chr);
-		}
-	}
+	for (var y=0; y<this.h; y++)
+		for (var x=0; x<this.w; x++)
+			this._refreshCharAt(x, y, this.show_cursor);
+}
+
+
+Convas.prototype._refreshCharAt = function(x, y, show_cursor)
+{
+	var clr = this.buffer.getColorAt(x, y),
+		chr = this.buffer.getCharAt (x, y);
+	if (show_cursor &&
+			x == this.buffer.x &&
+			y == this.buffer.y)
+		clr = ((clr>>4) | (clr<<4)) & 0xFF;
+	this._drawRect(x, y, new Color(clr >>    4)     );
+	this._drawChar(x, y, new Color(clr  & 0x0F), chr);
 }
 
 
 Convas.prototype._drawRect = function(x, y, clr)
 {
 	this.c.fillStyle = '' + clr;	// convert color to string
-	this.c.fillRect(x*this.font_w + 2, y*this.font_h + 2 + 4,
+	this.c.fillRect(x*this.font_w + 2, y*this.font_h + 4,
 			this.font_w, this.font_h);
 }
 
@@ -105,9 +187,50 @@ Convas.prototype._drawChar = function(x, y, clr, chr)
 			+ this.font_name;
 	this.c.fillText(chr,
 			x * this.font_w + 2,
-			(y + 1) * this.font_h + 2);
+			(y + 1) * this.font_h);
 }
 
+
+Convas.prototype._keyPress = function(evt)
+{
+	var key = evt.keyCode;
+	var ch  = String.fromCharCode(key);
+
+	switch (this.state) {
+		case CONVAS_STATE_READY:
+			break;
+
+		case CONVAS_STATE_READ_KEY:
+			if (this.is_echo)
+				this.putChar(ch);
+
+			this.state = CONVAS_STATE_READY;
+			this.callback(key);
+			break;
+
+		case CONVAS_STATE_READ_LINE:
+			if (this.is_echo) {
+				if (ch == '\r') this.putChar('\n');
+				else this.putChar(ch);
+			}
+
+			if (ch == '\b')
+				this.line_buf = this.line_buf.slice(0, -1);
+			else if (ch == '\r') {
+				this.state = CONVAS_STATE_READY;
+				this.callback(this.line_buf);
+			}
+			else this.line_buf += ch;
+			break;
+	}
+}
+
+
+Convas.prototype._splashCursor = function()
+{
+	this.show_cursor = !this.show_cursor;
+	this._refreshCharAt(this.buffer.x, this.buffer.y, this.show_cursor);
+}
 
 /**********************************************************************
  *

@@ -13,7 +13,35 @@ Under GPLv2. ABSOLUTELY NO WARRANTY!
 <script src="convas.js"></script>
 <script src="fs.js"></script>
 <script>
-	var convas = new Convas("vim", 80, 25, 11);
+	var convas = new Convas("vim", 80, 24, 11);
+	convas.write("What's your name? ");
+	convas.buffer.color = FG_R|FG_G;
+	convas.readLine(true, function(name) {
+		convas.buffer.color = BG_R|BG_G;
+		convas.write("Hello, " + name + "\n");
+		convas.readKey(false, function fn(key) {
+			var ch = String.fromCharCode(key);
+			switch (ch) {
+				case 'h':
+					convas.cursorTo(convas.buffer.x - 1,
+									convas.buffer.y);
+					break;
+				case 'l':
+					convas.cursorTo(convas.buffer.x + 1,
+									convas.buffer.y);
+					break;
+				case 'j':
+					convas.cursorTo(convas.buffer.x,
+									convas.buffer.y + 1);
+					break;
+				case 'k':
+					convas.cursorTo(convas.buffer.x,
+								    convas.buffer.y - 1);
+					break;
+			}
+			convas.readKey(false, fn);
+		});
+	});
 </script>
 <!--<script src="fs.js"></script>
 <script src="vim.js"></script>
