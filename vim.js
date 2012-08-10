@@ -22,8 +22,6 @@ function Vim(id)
 	this.convas.setColor(FG_H|FG_B);
 	for (var i=0; i<80*24; i++)
 		this.convas.write(" ");
-
-	this.convas.setColor(FG_H|FG_B);
 	for (var i=1; i<23; i++) {
 		this.convas.cursorTo(0, i);
 		this.convas.write("~");

@@ -15,14 +15,14 @@
 // FG: Fourground		BG: Background
 // H, R, G and B stand respectively for: Highlight, Red, Green, Blue
 var BG_H = (1 << 7);
-var BG_R = (1 << 6);
+var BG_B = (1 << 6);
 var BG_G = (1 << 5);
-var BG_B = (1 << 4);
+var BG_R = (1 << 4);
 
 var FG_H = (1 << 3);
-var FG_R = (1 << 2);
+var FG_B = (1 << 2);
 var FG_G = (1 << 1);
-var FG_B = (1 << 0);
+var FG_R = (1 << 0);
 
 var CONVAS_STATE_READY     = 0;
 var CONVAS_STATE_READ_KEY  = 1;
@@ -42,6 +42,7 @@ function Convas(id, w, h, font_size)
 	this.font_size = font_size;
 	this.font_name = "文泉驿等宽微米黑";	// default font
 	this.initFontWH();		// init font's width and height
+	this.color_scheme = new ConvasColorSchemeXTerm();
 
 	// create canvas and initialize it
 	document.write("<canvas id='" + this.id
@@ -179,14 +180,14 @@ Convas.prototype._refreshCharAt = function(x, y, show_cursor)
 			x == this.buffer.x &&
 			y == this.buffer.y)
 		clr = ((clr>>4) | (clr<<4)) & 0xFF;
-	this._drawRect(x, y, new Color(clr >>    4)     );
-	this._drawChar(x, y, new Color(clr  & 0x0F), chr);
+	this._drawRect(x, y, this.color_scheme.getColor(clr >>    4)     );
+	this._drawChar(x, y, this.color_scheme.getColor(clr  & 0x0F), chr);
 }
 
 
 Convas.prototype._drawRect = function(x, y, clr)
 {
-	this.c.fillStyle = '' + clr;	// convert color to string
+	this.c.fillStyle = clr;
 	this.c.fillRect(x*this.font_w + 2, y*this.font_h + 4,
 			this.font_w, this.font_h);
 }
@@ -194,7 +195,7 @@ Convas.prototype._drawRect = function(x, y, clr)
 
 Convas.prototype._drawChar = function(x, y, clr, chr)
 {
-	this.c.fillStyle = '' + clr;	// convert color to string
+	this.c.fillStyle = clr;
 	this.c.font = (clr.h ? "bold " : "")
 			+ this.font_size + "px "
 			+ this.font_name;
@@ -394,5 +395,39 @@ ConvasBuffer.prototype.toString = function()
 	}
 
 	return s;
+}
+
+/**********************************************************************
+ *
+ * ConvasColorScheme: the color scheme
+ *
+ */
+
+function ConvasColorSchemeXTerm()
+{
+	this.colors = [
+		"#000000",
+		"#CD0000",
+		"#00CD00",
+		"#CDCD00",
+		"#1E90FF",
+		"#CD00CD",
+		"#00CDCD",
+		"#E5E5E5",
+
+		"#4C4C4C",
+		"#FF0000",
+		"#00FF00",
+		"#FFFF00",
+		"#4682B4",
+		"#FF00FF",
+		"#00FFFF",
+		"#FFFFFF"
+	];
+}
+
+ConvasColorSchemeXTerm.prototype.getColor = function(color)
+{
+	return this.colors[color & 0x0F];
 }
 
