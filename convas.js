@@ -55,9 +55,12 @@ function Convas(id, w, h, font_size)
 	this.c.textAlign = "left";
 
 	// listen events
-	var me = this;
+	var that = this;
 	document.addEventListener("keypress", function(evt) {
-		me._keyPress(evt);
+		that._keyPress(evt.keyCode);
+	}, true);
+	document.addEventListener("keydown", function(evt) {
+		that._keyDown(evt);
 	}, true);
 
 	// create front buffer
@@ -135,6 +138,21 @@ Convas.prototype.cursorTo = function(x, y)
 }
 
 
+Convas.prototype.getCursorPos = function()
+{
+	return {
+		x: this.buffer.x,
+		y: this.buffer.y
+	};
+}
+
+
+Convas.prototype.setCursorPos = function(pos)
+{
+	this.cursorTo(pos.x, pos.y);
+}
+
+
 Convas.prototype.clear = function()
 {
 	this.buffer.reset();
@@ -152,9 +170,9 @@ Convas.prototype._resetTimerSplash = function()
 {
 	if (this.timer_splash)
 		clearInterval(this.timer_splash);
-	var me = this;
+	var that = this;
 	this.timer_splash = setInterval(function() {
-		me._splashCursor();
+		that._splashCursor();
 	}, 500);
 }
 
@@ -205,10 +223,9 @@ Convas.prototype._drawChar = function(x, y, clr, chr)
 }
 
 
-Convas.prototype._keyPress = function(evt)
+Convas.prototype._keyPress = function(key)
 {
-	var key = evt.keyCode;
-	var ch  = String.fromCharCode(key);
+	var ch = String.fromCharCode(key);
 
 	switch (this.state) {
 		case CONVAS_STATE_READY:
@@ -235,6 +252,19 @@ Convas.prototype._keyPress = function(evt)
 				this.callback(this.line_buf);
 			}
 			else this.line_buf += ch;
+			break;
+	}
+}
+
+
+// catch special key
+Convas.prototype._keyDown = function(evt)
+{
+	var key = evt.keyCode;
+	var ch  = String.fromCharCode(key);
+	switch (ch) {
+		case '\b':
+			this._keyPress(key);
 			break;
 	}
 }
@@ -425,6 +455,7 @@ function ConvasColorSchemeXTerm()
 		"#FFFFFF"
 	];
 }
+
 
 ConvasColorSchemeXTerm.prototype.getColor = function(color)
 {

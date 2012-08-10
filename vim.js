@@ -70,29 +70,114 @@ function Vim(id)
 	this.convas.setColor(FG_R|FG_G);
 	this.convas.write("  1 ");
 
-	// debug
-	var me = this;
-	me.convas.readKey(false, function fn(key) {
+	// enter normal mode
+	this._normalMode();
+}
+
+
+Vim.prototype._normalMode = function()
+{
+	var that = this;
+	that.convas.readKey(false, function fn(key) {
 		var ch = String.fromCharCode(key);
 		switch (ch) {
+			// for debug now
 			case 'h':
-				me.convas.cursorTo(me.convas.buffer.x - 1,
-								me.convas.buffer.y);
+				that.convas.cursorTo(that.convas.buffer.x - 1,
+									 that.convas.buffer.y);
 				break;
 			case 'l':
-				me.convas.cursorTo(me.convas.buffer.x + 1,
-								me.convas.buffer.y);
+				that.convas.cursorTo(that.convas.buffer.x + 1,
+									 that.convas.buffer.y);
 				break;
 			case 'j':
-				me.convas.cursorTo(me.convas.buffer.x,
-								me.convas.buffer.y + 1);
+				that.convas.cursorTo(that.convas.buffer.x,
+									 that.convas.buffer.y + 1);
 				break;
 			case 'k':
-				me.convas.cursorTo(me.convas.buffer.x,
-								me.convas.buffer.y - 1);
+				that.convas.cursorTo(that.convas.buffer.x,
+									 that.convas.buffer.y - 1);
 				break;
+			case ':':
+				that._cmdLineMode();
+				return;
+			default:
+				console.log(ch + " <" + key + ">");
 		}
-		me.convas.readKey(false, fn);
+		that.convas.readKey(false, fn);
 	});
+}
+
+
+Vim.prototype._cmdLineMode = function()
+{
+	var that = this;
+	var cmd  = "";
+	var pos  = that.convas.getCursorPos();
+
+	that._blankCmdLine();
+	that.convas.write(":");
+
+	that.convas.readKey(false, function fn(key) {
+		var ch = String.fromCharCode(key);
+		if (ch == '\r') {
+			if (cmd == "") {
+				that.convas.setCursorPos(pos);
+				that._normalMode();
+				return;
+			}
+			that.convas.setCursorPos(pos);
+			that._normalMode();
+			that.execScript(cmd);
+			return;
+		}
+		else if (ch == '\b') {
+			if (cmd == '') {
+				that._blankCmdLine();
+				that.convas.setCursorPos(pos);
+				that._normalMode();
+				return;
+			}
+			cmd = cmd.slice(0, -1);
+			that._blankCmdLine();
+			that.convas.write(":" + cmd);
+		}
+		else {
+			cmd += ch;
+			that._blankCmdLine();
+			that.convas.write(":" + cmd);
+		}
+		that.convas.readKey(false, fn);
+	});
+}
+
+
+Vim.prototype._blankCmdLine = function()
+{
+	this.convas.cursorTo(0, this.convas.h-1);
+	this.convas.setColor(FG_R|FG_G|FG_B);
+	for (var i=0; i<this.convas.w; i++)
+		this.convas.write(" ");
+	this.convas.cursorTo(0, this.convas.h-1);
+}
+
+
+Vim.prototype._error = function(msg)
+{
+	var pos = this.convas.getCursorPos();
+	this._blankCmdLine();
+	this.convas.setColor(FG_H|FG_R|FG_G|FG_B|BG_R);
+	this.convas.write("E000: " + msg);
+	this.convas.setCursorPos(pos);
+}
+
+
+Vim.prototype.execScript = function(script)
+{
+	if (script.indexOf('\n') != -1) {
+		this._error("TODO");
+	}
+
+	this._error("Not an editor command: " + script);
 }
 
