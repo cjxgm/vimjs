@@ -28,9 +28,9 @@ This document will explain the public API of each component in vim.js.
 
 #### Convas(String id, int w, int h, int font\_size)
 You can create a new convas by
-``javascript
+```javascript
 	var convas = new Conavs("blah", 80, 24, 11);
-``
+```
 
 > id
 
