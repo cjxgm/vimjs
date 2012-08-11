@@ -31,6 +31,8 @@ This document will explain the public API of each component in vim.js.
 	BG_G		Background Color Green
 	BG_B		Background Color Blue
 
+For more details about color, see `setColor` method.
+
 
 #### Convas(string id, int w, int h, int font\_size)
 You can create a new convas by
@@ -61,6 +63,9 @@ Font size preferred to use.
 > NOTE
 
 The font is currently `WenQuanYi MicroHei Mono (文泉驿等宽微米黑)`.
+It can *NOT* be changed without modifying the source for now.
+
+The color scheme is currently `XTerm` (the same as that in GNOME Terminal).
 It can *NOT* be changed without modifying the source for now.
 
 
@@ -98,7 +103,7 @@ convas.readKey(false, function fn(key_code) {	// no echo
 ```
 
 
-#### Convas.readLine(bool is\_echo, (function fn(line)))
+#### void Convas.readLine(bool is\_echo, (function fn(line)))
 Wait the user to input a line.
 When `ENTER` key pressed, the function fn will be called.
 
@@ -125,13 +130,95 @@ convas.readLine(true, function fn(line) {
 ```
 
 
-#### Convas.putChar(ch)
-#### Convas.write(text)
-#### Convas.cursorTo(x, y)
-#### Convas.getCursorPos()
-#### Convas.setCursorPos(pos)
-#### Convas.clear()
-#### Convas.setColor(clr)
+#### void Convas.putChar(char ch)
+Put a char into the console above the cursor, and advance the cursor.
+
+
+> ch
+
+Char to put.
+
+
+> NOTE
+
+Do *NOT* put a string! Use `write` instead if you want to put a string.
+This function regards `\n` as the only new line character. Do *NOT*
+use `\r`!
+
+
+#### void Convas.write(string text)
+Write a string into the console at the cursor, advancing the cursor.
+
+
+> text
+
+String to write.
+
+
+> NOTE
+
+This function calls `putChar` to write each character, so it receives
+`\n`.
+
+
+#### void Convas.cursorTo(int x, int y)
+Move cursor to a specific position (specified by x and y).
+
+
+> x, y
+
+The coordinate that the cursor will be moved to.
+The 2 values are clamped to [0, convas width) and [0, convas height),
+perspectively.
+
+
+#### ({int x, int y}) Convas.getCursorPos()
+Get the cursor position. Both x and y at the same time.
+
+
+> RETURN
+
+The cursor position, in object, { x: 0, y: 0 } for example.
+
+
+#### void Convas.setCursorPos(({int x, int y}) pos)
+Set the cursor position. Both x and y at the same time.
+
+> pos
+
+Position to set to, in object, { x: 0, y: 0 } for example.
+
+
+#### void Convas.clear()
+Clear the console to blank.
+
+
+#### void Convas.setColor(uint8\_t clr)
+Set the color to `clr`, then the following `write` function calls will use
+that color.
+
+
+> clr
+
+The color to set. You'd better use the color constants. For example,
+`FG\_R` for foreground red, `FG\_R|FG\_G` for foreground yellow, and
+`FG\_R|BG\_H|BG\_B` for foreground red with background highlighted blue.
+
+
+> DETAILS ABOUT THE COLOR
+The color is in fact a uint8_t. In le-encoded system, it looks like this:
+
+	0 0 0 0    0 0 0 0
+	| | | |    | | | `-- R `
+	| | | |    | | `---- G | Foreground
+	| | | |    | `------ B | Color
+	| | | |    `-------- H /
+	| | | |
+	| | | `------------- R `
+	| | `--------------- G | Background
+	| `----------------- B | Color
+	`------------------- H /
+
 
 <!-- vim: ft=markdown noet sts=0 ts=4 sw=4
 -->
