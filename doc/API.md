@@ -3,7 +3,7 @@ Written by eXerigumo Clanjor (哆啦比猫/兰威举)<br>
 
 ## License
 This document is licensed under the terms of<br>
-Creative Commons Attribution (CC-BY) 3.0.<br>
+`Creative Commons Attribution (CC-BY) 3.0`.<br>
 Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2010-2012.
 
 ## Abstract
@@ -29,7 +29,7 @@ This document will explain the public API of each component in vim.js.
 #### Convas(String id, int w, int h, int font\_size)
 You can create a new convas by
 ```javascript
-	var convas = new Conavs("blah", 80, 24, 11);
+var convas = new Conavs("blah", 80, 24, 11);
 ```
 
 > id
@@ -53,7 +53,7 @@ Font size preferred to use.
 
 > NOTE
 
-The font is currently WenQuanYi MicroHei Mono (文泉驿等宽微米黑).
+The font is currently `WenQuanYi MicroHei Mono (文泉驿等宽微米黑)`.
 It can *NOT* be changed without modifying the source for now.
 
 
