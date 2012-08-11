@@ -26,12 +26,11 @@ This document will explain the public API of each component in vim.js.
 		BG_G		Background Color Green
 		BG_B		Background Color Blue
 
-#### Convas
-##### void Convas(String id, int w, int h, int font\_size)
-> return value
-
-nothing
-
+#### Convas(String id, int w, int h, int font\_size)
+You can create a new convas by
+``javascript
+	var convas = new Conavs("blah", 80, 24, 11);
+``
 
 > id
 
@@ -56,6 +55,14 @@ Font size preferred to use.
 
 The font is currently WenQuanYi MicroHei Mono (文泉驿等宽微米黑).
 It can *NOT* be changed without modifying the source for now.
+
+
+#### void Convas.refresh()
+Redraw the whole console, ans reset the timer for splashing cursor.
+
+> NOTE
+
+Do *NOT* use this on your own, it will be *REALLY SLOW*!
 
 
 <!-- vim: ft=markdown noet sts=0 ts=4 sw=4

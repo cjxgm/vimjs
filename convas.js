@@ -42,7 +42,7 @@ function Convas(id, w, h, font_size)
 	this.h = h;
 	this.font_size = font_size;
 	this.font_name = "文泉驿等宽微米黑";	// default font
-	this.initFontWH();		// init font's width and height
+	this._initFontWH();		// init font's width and height
 	this.color_scheme = new ConvasColorSchemeXTerm();
 
 	// create canvas and initialize it
@@ -68,19 +68,6 @@ function Convas(id, w, h, font_size)
 	this.buffer = new ConvasBuffer(w, h);
 
 	this.refresh();
-}
-
-
-Convas.prototype.initFontWH = function()
-{
-	var t = document.createElement("span");
-	t.style = "font-family: " + this.font_name
-			+ "; font-size: " + this.font_size + ";";
-	t.textContent = "y";
-	document.body.appendChild(t);
-	this.font_w = t.offsetWidth  + 2;
-	this.font_h = t.offsetHeight + 2;
-	document.body.removeChild(t);
 }
 
 
@@ -164,6 +151,19 @@ Convas.prototype.clear = function()
 Convas.prototype.setColor = function(clr)
 {
 	this.buffer.color = clr;
+}
+
+
+Convas.prototype._initFontWH = function()
+{
+	var t = document.createElement("span");
+	t.style = "font-family: " + this.font_name
+			+ "; font-size: " + this.font_size + ";";
+	t.textContent = "y";
+	document.body.appendChild(t);
+	this.font_w = t.offsetWidth  + 2;
+	this.font_h = t.offsetHeight + 2;
+	document.body.removeChild(t);
 }
 
 
