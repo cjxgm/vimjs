@@ -1,16 +1,21 @@
 # Vim.js Components' Public API Document
 Written by eXerigumo Clanjor (哆啦比猫/兰威举)<br>
 
+
 ## License
 This document is licensed under the terms of<br>
 `Creative Commons Attribution (CC-BY) 3.0`.<br>
 Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2010-2012.
 
+
 ## Abstract
 This document will explain the public API of each component in vim.js.
 
+
 ## Conventions
+
 ## API Document
+
 ### convas.js
 > Constants
 
@@ -26,11 +31,13 @@ This document will explain the public API of each component in vim.js.
 	BG_G		Background Color Green
 	BG_B		Background Color Blue
 
+
 #### Convas(string id, int w, int h, int font\_size)
 You can create a new convas by
 ```javascript
 var convas = new Conavs("blah", 80, 24, 11);
 ```
+
 
 > id
 
@@ -82,14 +89,42 @@ The call back function
 > EXAMPLE
 
 ```javascript
-convas.readKey(false, function fn(key_code) {
+// Will repeatedly read what user typed and show it with alert.
+convas.readKey(false, function fn(key_code) {	// no echo
 	var ch = String.fromCharCode(key_code);
 	alert("You pressed " + ch + "!");
 	convas.readKey(false, fn);
-})
+});
 ```
 
-#### Convas.readLine(is\_echo, (function fn(line)))
+
+#### Convas.readLine(bool is\_echo, (function fn(line)))
+Wait the user to input a line.
+When `ENTER` key pressed, the function fn will be called.
+
+
+> is_echo
+
+Write the pressed key char into the console or not.
+
+
+> fn
+
+The call back function
+
+
+> EXAMPLE
+
+```javascript
+// Will repeatedly read what user typed and show it with alert.
+// One line at a time.
+convas.readLine(true, function fn(line) {
+	alert("You input `" + line + "'!");
+	convas.readLine(false, fn);
+});
+```
+
+
 #### Convas.putChar(ch)
 #### Convas.write(text)
 #### Convas.cursorTo(x, y)
