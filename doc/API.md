@@ -14,19 +14,19 @@ This document will explain the public API of each component in vim.js.
 ### convas.js
 > Constants
 
-	>> Color Constants
+	// Color Constants
 
-		FG_H		Foreground Color Highlight
-		FG_R		Foreground Color Red
-		FG_G		Foreground Color Green
-		FG_B		Foreground Color Blue
+	FG_H		Foreground Color Highlight
+	FG_R		Foreground Color Red
+	FG_G		Foreground Color Green
+	FG_B		Foreground Color Blue
 
-		BG_H		Background Color Highlight
-		BG_R		Background Color Red
-		BG_G		Background Color Green
-		BG_B		Background Color Blue
+	BG_H		Background Color Highlight
+	BG_R		Background Color Red
+	BG_G		Background Color Green
+	BG_B		Background Color Blue
 
-#### Convas(String id, int w, int h, int font\_size)
+#### Convas(string id, int w, int h, int font\_size)
 You can create a new convas by
 ```javascript
 var convas = new Conavs("blah", 80, 24, 11);
@@ -64,6 +64,39 @@ Redraw the whole console, ans reset the timer for splashing cursor.
 
 Do *NOT* use this on your own, it will be *REALLY SLOW*!
 
+
+#### void Convas.readKey(bool is\_echo, (function fn(key\_code)))
+Wait a key press. When a key hit, the function fn will be called.
+
+
+> is_echo
+
+Write the pressed key char into the console or not.
+
+
+> fn
+
+The call back function
+
+
+> EXAMPLE
+
+```javascript
+convas.readKey(false, function fn(key_code) {
+	var ch = String.fromCharCode(key_code);
+	alert("You pressed " + ch + "!");
+	convas.readKey(false, fn);
+})
+```
+
+#### Convas.readLine(is\_echo, (function fn(line)))
+#### Convas.putChar(ch)
+#### Convas.write(text)
+#### Convas.cursorTo(x, y)
+#### Convas.getCursorPos()
+#### Convas.setCursorPos(pos)
+#### Convas.clear()
+#### Convas.setColor(clr)
 
 <!-- vim: ft=markdown noet sts=0 ts=4 sw=4
 -->
