@@ -29,24 +29,34 @@ This document will explain the public API of each component in vim.js.
 #### Convas
 ##### void Convas(String id, int w, int h, int font\_size)
 > return value
+
 nothing
 
+
 > id
+
 A Unique ID. Will be used as the DOM ID of the canvas of convas,
 prefixed with "\_\_\_\_\_\_convas\_". For example, if id="vim",
 then the DOM ID will be "\_\_\_\_\_\_convas\_vim"
 
+
 > w, h
+
 The console will be WxH character sized. For example, if w=8 and h=2,
 the terminal will be a 8x2 one, which has 8 characters per line with
 2 lines.
 
+
 > font\_size
+
 Font size preferred to use.
 
+
 > NOTE
+
 The font is currently WenQuanYi MicroHei Mono (文泉驿等宽微米黑).
 It can *NOT* be changed without modifying the source for now.
+
 
 <!-- vim: ft=markdown noet sts=0 ts=4 sw=4
 -->
