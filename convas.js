@@ -14,15 +14,16 @@
 
 // FG: Fourground		BG: Background
 // H, R, G and B stand respectively for: Highlight, Red, Green, Blue
-var BG_H = (1 << 7);
-var BG_B = (1 << 6);
-var BG_G = (1 << 5);
-var BG_R = (1 << 4);
-
-var FG_H = (1 << 3);
-var FG_B = (1 << 2);
-var FG_G = (1 << 1);
 var FG_R = (1 << 0);
+var FG_G = (1 << 1);
+var FG_B = (1 << 2);
+var FG_H = (1 << 3);
+
+var BG_R = (1 << 4);
+var BG_G = (1 << 5);
+var BG_B = (1 << 6);
+var BG_H = (1 << 7);
+
 
 var CONVAS_STATE_READY     = 0;
 var CONVAS_STATE_READ_KEY  = 1;
