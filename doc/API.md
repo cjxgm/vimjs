@@ -94,6 +94,16 @@ Other explanations.
 
 For more details about color, see `setColor` method.
 
+> Properties
+
+	// read-only properties
+	id				DOM ID of the canvas of the convas
+	w				Width  (how many chars per line)
+	h				Height (how many lines)
+	font_size		Font size
+	font_name		Font name
+	color_scheme	Color scheme
+
 
 #### Convas(string id, int w, int h, int font\_size)
 You can create a new convas by
@@ -282,5 +292,28 @@ The color is in fact a uint8\_t. In le-encoded system, it looks like this:
 	`------------------- H /
 
 
+#### ConvasBuffer(int w, int h)
+
+#### void ConvasBuffer.reset()
+#### uint8\_t ConvasBuffer.getColorAt(int x, int y)
+#### void ConvasBuffer.setColorAt(int x, int y, uint8\_t clr)
+#### char ConvasBuffer.getCharAt(int x, int y)
+#### void ConvasBuffer.setCharAt(int x, int y, char chr)
+#### void ConvasBuffer.cursorTo(int x, int y)
+#### void ConvasBuffer.advanceCursor()
+#### void ConvasBuffer.putChar(char ch, bool no\_advancing\_cursor)
+#### void ConvasBuffer.putCharAt(char ch, int x, int y)
+#### void ConvasBuffer.copyTo(ConvasBuffer buf2, int x0, int y0, int w0, int h0, int x1, int y1)
+#### void ConvasBuffer.newLine()
+#### void ConvasBuffer.write(string text)
+#### string ConvasBuffer.toString()
+
+
+#### ConvasColorSchemeXTerm()
+
+#### string ConvasColorSchemeXTerm.getColor(uint8\_t color)
+
+
 <!-- vim: ft=markdown noet sts=0 ts=4 sw=4
 -->
+
