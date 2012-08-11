@@ -201,12 +201,13 @@ that color.
 > clr
 
 The color to set. You'd better use the color constants. For example,
-`FG\_R` for foreground red, `FG\_R|FG\_G` for foreground yellow, and
-`FG\_R|BG\_H|BG\_B` for foreground red with background highlighted blue.
+`FG_R` for foreground red, `FG_R|FG_G` for foreground yellow, and
+`FG_R|BG_H|BG_B` for foreground red with background highlighted blue.
 
 
 > DETAILS ABOUT THE COLOR
-The color is in fact a uint8_t. In le-encoded system, it looks like this:
+
+The color is in fact a uint8\_t. In le-encoded system, it looks like this:
 
 	0 0 0 0    0 0 0 0
 	| | | |    | | | `-- R `
