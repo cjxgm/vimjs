@@ -13,6 +13,67 @@ This document will explain the public API of each component in vim.js.
 
 
 ## Conventions
+This document is organized like this:
+
+### file.js
+> Constants
+
+	// some constants
+
+Other explanation.
+
+
+> Properties
+
+	// accessible properties
+
+Other explanation.
+
+
+#### Object(type1 param1, type2 param2)
+EXPLAIN
+
+
+#### return\_type Object.method(type1 param1, type2 param2)
+EXPLAIN
+
+
+## Conventions: About the EXPLAIN
+EXPLAIN will be like this:
+
+
+Explanation of the Object or method.
+
+
+> RETURN
+
+Return value explanation.
+
+
+> param1
+
+Param1 explanation.
+
+
+> param2, param3
+
+Explanation of the pair of relative parameters (param2 and param3).
+
+
+> NOTE
+
+Some notes to the method.
+
+
+> EXAMPLE
+
+Example of the method.
+
+
+> OTHER...
+
+Other explanations.
+
 
 ## API Document
 
@@ -209,7 +270,7 @@ The color to set. You'd better use the color constants. For example,
 
 The color is in fact a uint8\_t. In le-encoded system, it looks like this:
 
-	0 0 0 0    0 0 0 0
+	7 6 5 4    3 2 1 0
 	| | | |    | | | `-- R `
 	| | | |    | | `---- G | Foreground
 	| | | |    | `------ B | Color
