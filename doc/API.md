@@ -314,6 +314,10 @@ The color is in fact a uint8\_t. In le-encoded system, it looks like this:
 #### string ConvasColorSchemeXTerm.getColor(uint8\_t color)
 
 
+### fs.js
+
+### vim.js
+
 <!-- vim: ft=markdown noet sts=0 ts=4 sw=4
 -->
 
