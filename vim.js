@@ -15,11 +15,13 @@
 function Vim(id)
 {
 	this.convas = new Convas(id, 80, 24, 11);
-	//this.buffer = new VimBufferEdit();
+	this.tabs  = [new VimWindow(this)];
+	this.tabId = 0;
+	this.win   = this.tabs[this.tabId];
+	this.render();
 
 	// show initial screen
-	this.convas.clear();
-
+	var pos = this.convas.getCursorPos();
 	this.convas.setColor(FG_R|FG_G|FG_B);
 	this.convas.cursorTo(26, 6);
 	this.convas.write("VIM.JS - Vi IMproved for JS");
@@ -49,11 +51,62 @@ function Vim(id)
 	this.convas.write("<Enter>");
 	this.convas.setColor(FG_R|FG_G|FG_B);
 	this.convas.write("               to log out");
-
-	//this.buffer.render(this.convas, 0, 0, this.w, this.h-1);
+	this.convas.setCursorPos(pos);
 
 	// enter normal mode
 	this._normalMode();
+}
+
+
+Vim.prototype.render = function()
+{
+	if (this.tabs[this.tabId] === this.win) {
+		var buf = new ConvasBuffer(this.convas.w, this.convas.h-1);
+		this.win.render(buf);
+		this.convas.renderBuffer(buf, 0, 0);
+
+		this.convas.cursorTo(0, this.convas.h-1);
+		this.convas.setColor(FG_R|FG_G|FG_B);
+		this.convas.write(this.win.status_line);
+
+		this.convas.cursorTo(buf.x, buf.y);
+	}
+	else this._doRender(this.tabs[this.tabId], 0, 0,
+			this.convas.w, this.convas.h-1);
+}
+
+
+Vim.prototype._doRender = function(win, x, y, w, h)
+{
+	if (win instanceof VimWindow) {
+		if (h > 1) {
+			var buf = new ConvasBuffer(w, h);
+			win.render(buf);
+			this.convas.renderBuffer(buf, x, y);
+			if (win === this.win)
+				this.convas.cursorTo(buf.x+x, buf.y+y);
+		}
+		if (h) {
+			var buf = new ConvasBuffer(w, 1);
+			buf.color = BG_H | BG_R | BG_G | BG_B;
+			if (win === this.win) buf.color |= FG_H;
+			for (var i=0; i<w; i++) buf.write(" ");
+			buf.cursorTo(0, 0);
+			buf.write(win.status_line);
+			this.convas.renderBuffer(buf, x, y+h-1);
+		}
+		return;
+	}
+
+	if (win.is_horizon) {
+	}
+	else {	// vertical
+		var step = h / win.wins.length;
+		for (var i in win.wins)
+			this._doRender(win.wins[i], x, y + parseInt(i*step), w,
+					(i==win.wins.length-1 ? h-parseInt(step*i) :
+							parseInt(step)));
+	}
 }
 
 
@@ -160,7 +213,9 @@ Vim.prototype.execScript = function(script)
 		this._error("TODO");
 	}
 
-	this._error("Not an editor command: " + script);
+	if (script == "new") this.win.splitY();
+	else if (script == "q") this.win.close();
+	else this._error("Not an editor command: " + script);
 }
 
 /**********************************************************************
@@ -170,32 +225,92 @@ Vim.prototype.execScript = function(script)
  */
 
 // note: the status line should NOT be included in <h>.
-function VimWindow()
+function VimWindow(vim, pa)
 {
-	// cursor position (real position, starting from 1)
-	this.x = 1;
-	this.y = 1;
-
-	// cursor position (character related (1 tab = 1 unit))
-	// 0 for no character.
-	this.cx = 0;
-	// no need for y
-	
-	// cursor position (ideal x, for keeping cursor x position
-	// when moving cursor up and down)
-	this.ix = 1;
-
-	// has at least 1 line.
-	this.lines = [""];
-	this.starting_line = 0;	// for scrolling
+	this.vim = vim;
+	this.pa  = pa;		// parent
 }
 
-/*
-VimBufferEdit.prototype.render = function(convas, x, y, w, h)
-{
-	var line_num_width = this.lines.length.toString().length + 1;
-	if (line_num_width < 4) line_num_width = 4;
 
-	convas.cursorTo(x + this.x-1 + line_num_width, y + this.y-1);
+VimWindow.prototype.render = function(buffer)
+{
+	this.status_line = "HELLO";
 }
-*/
+
+
+VimWindow.prototype.splitX = function()
+{
+}
+
+
+VimWindow.prototype.splitY = function()
+{
+	var win = new VimWindow(this.vim);
+
+	if (this.pa) {
+		if (this.pa.is_horizon) {
+			var sp  = new VimWindowSplit(this.vim, this.pa,
+					false, win, this);
+			win.pa  = sp;
+			this.pa = sp;
+			var idx = this.pa.wins.indexOf(this);
+			this.pa.wins[idx] = sp;
+		}
+		else {	// vertical
+			win.pa  = this.pa;
+			var idx = this.pa.wins.indexOf(this);
+			this.pa.wins.splice(idx, 0, win);	// insert the win
+		}
+	}
+	else {
+		var sp  = new VimWindowSplit(this.vim, this.pa,
+				false, win, this);
+		win.pa  = sp;
+		this.pa = sp;
+		this.vim.tabs[this.vim.tabId] = sp;
+	}
+
+	this.vim.win = win;
+	this.vim.render();
+}
+
+
+VimWindow.prototype.close = function()
+{
+	if (this.pa) this.pa.killWindow(this);
+	else this.vim.closeTab();
+}
+
+/**********************************************************************
+ *
+ * VimWindowSplit: splitter for vim windows
+ *
+ */
+
+function VimWindowSplit(vim, pa, is_horizon, wina, winb)
+{
+	this.vim  = vim;
+	this.pa   = pa;
+	this.wins = [wina, winb];
+	this.is_horizon = is_horizon;
+}
+
+
+VimWindowSplit.prototype.killWindow = function(win)
+{
+	var idx = this.wins.indexOf(win);
+	this.wins.splice(idx, 1);	// remove the window
+
+	if (idx >= this.wins.length) idx = this.wins.length-1;
+	this.vim.win = this.wins[idx];
+
+	if (this.wins.length == 1) {
+		if (this.pa)
+			this.pa.wins[this.pa.wins.indexOf(this)] = this.vim.win;
+		else this.vim.tabs[this.vim.tabId] = this.vim.win;
+		this.vim.win.pa = undefined;
+	}
+
+	this.vim.render();
+}
+
