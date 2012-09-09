@@ -102,6 +102,7 @@ Convas.prototype.putChar = function(ch)
 {
 	var x = this.buffer.x,
 		y = this.buffer.y;
+
 	this.buffer.write(ch);
 	this._refreshCharAt(x, y, false);
 	this._refreshCharAt(this.buffer.x, this.buffer.y, true);
@@ -113,6 +114,32 @@ Convas.prototype.write = function(text)
 {
 	for (var i in text)
 		this.putChar(text[i]);
+}
+
+
+Convas.prototype.renderBuffer = function(buf, ox, oy)
+{
+	// no splashing when rendering
+	if (this.timer_splash) clearInterval(this.timer_splash);
+	this._refreshCharAt(this.buffer.x, this.buffer.y, false);
+
+	for (var y=0; y<buf.h; y++)
+		for (var x=0; x<buf.w; x++) {
+			if (ox+x >= this.buffer.w || oy+y >= this.buffer.h)
+				continue;
+
+			if (this.buffer.getCharAt(ox+x, oy+y) ==
+					buf.getCharAt(x, y) &&
+					this.buffer.getColorAt(ox+x, oy+y) ==
+					buf.getColorAt(x, y))
+				continue;
+
+			this.buffer.setCharAt (ox+x, oy+y, buf.getCharAt (x, y));
+			this.buffer.setColorAt(ox+x, oy+y, buf.getColorAt(x, y));
+			this._refreshCharAt(ox+x, oy+y, false);
+		}
+
+	this._resetTimerSplash();
 }
 
 

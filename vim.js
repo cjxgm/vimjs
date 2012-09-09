@@ -15,7 +15,7 @@
 function Vim(id)
 {
 	this.convas = new Convas(id, 80, 24, 11);
-	this.buffer = new VimBufferEdit();
+	//this.buffer = new VimBufferEdit();
 
 	// show initial screen
 	this.convas.clear();
@@ -50,7 +50,7 @@ function Vim(id)
 	this.convas.setColor(FG_R|FG_G|FG_B);
 	this.convas.write("               to log out");
 
-	this.buffer.render(this.convas, 0, 0, this.w, this.h-1);
+	//this.buffer.render(this.convas, 0, 0, this.w, this.h-1);
 
 	// enter normal mode
 	this._normalMode();
@@ -190,7 +190,7 @@ function VimWindow()
 	this.starting_line = 0;	// for scrolling
 }
 
-
+/*
 VimBufferEdit.prototype.render = function(convas, x, y, w, h)
 {
 	var line_num_width = this.lines.length.toString().length + 1;
@@ -198,4 +198,4 @@ VimBufferEdit.prototype.render = function(convas, x, y, w, h)
 
 	convas.cursorTo(x + this.x-1 + line_num_width, y + this.y-1);
 }
-
+*/
