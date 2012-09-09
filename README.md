@@ -7,7 +7,7 @@ Licensed under GPLv2. ABSOLUTELY NO WARRANTY! See LICENSE for details.
 English documents are coming soon...
 
 
-## 2012-08-19 前待办
+## 2012-09-30 前待办
 
 * 基本编辑命令
 * 基于 local storage 的文件存储

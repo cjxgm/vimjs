@@ -15,28 +15,12 @@
 function Vim(id)
 {
 	this.convas = new Convas(id, 80, 24, 11);
+	this.buffer = new VimBufferEdit();
 
 	// show initial screen
 	this.convas.clear();
 
-	this.convas.setColor(FG_H|FG_B);
-	for (var i=0; i<80*24; i++)
-		this.convas.write(" ");
-	for (var i=1; i<23; i++) {
-		this.convas.cursorTo(0, i);
-		this.convas.write("~");
-	}
-
-	this.convas.cursorTo(0, 0);
 	this.convas.setColor(FG_R|FG_G|FG_B);
-	for (var i=0; i<80; i++)
-		this.convas.write(" ");
-
-	this.convas.cursorTo(0, 23);
-	for (var i=0; i<62; i++)
-		this.convas.write(" ");
-	this.convas.write("0,0-1         All ");
-
 	this.convas.cursorTo(26, 6);
 	this.convas.write("VIM.JS - Vi IMproved for JS");
 	this.convas.cursorTo(34, 8);
@@ -66,9 +50,7 @@ function Vim(id)
 	this.convas.setColor(FG_R|FG_G|FG_B);
 	this.convas.write("               to log out");
 
-	this.convas.cursorTo(0, 0);
-	this.convas.setColor(FG_R|FG_G);
-	this.convas.write("  1 ");
+	this.buffer.render(this.convas, 0, 0, this.w, this.h-1);
 
 	// enter normal mode
 	this._normalMode();
@@ -179,5 +161,41 @@ Vim.prototype.execScript = function(script)
 	}
 
 	this._error("Not an editor command: " + script);
+}
+
+/**********************************************************************
+ *
+ * VimWindow: the viewport of a buffer
+ *
+ */
+
+// note: the status line should NOT be included in <h>.
+function VimWindow()
+{
+	// cursor position (real position, starting from 1)
+	this.x = 1;
+	this.y = 1;
+
+	// cursor position (character related (1 tab = 1 unit))
+	// 0 for no character.
+	this.cx = 0;
+	// no need for y
+	
+	// cursor position (ideal x, for keeping cursor x position
+	// when moving cursor up and down)
+	this.ix = 1;
+
+	// has at least 1 line.
+	this.lines = [""];
+	this.starting_line = 0;	// for scrolling
+}
+
+
+VimBufferEdit.prototype.render = function(convas, x, y, w, h)
+{
+	var line_num_width = this.lines.length.toString().length + 1;
+	if (line_num_width < 4) line_num_width = 4;
+
+	convas.cursorTo(x + this.x-1 + line_num_width, y + this.y-1);
 }
 
