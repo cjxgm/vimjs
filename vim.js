@@ -14,6 +14,8 @@
 
 function Vim(id)
 {
+	this.default_set = { nu: true };
+	this.mode  = 'NORMAL';
 	this.convas = new Convas(id, 80, 24, 11);
 	this.tabs  = [new VimWindow(this)];
 	this.tabId = 0;
@@ -53,8 +55,15 @@ function Vim(id)
 	this.convas.write("               to log out");
 	this.convas.setCursorPos(pos);
 
-	// enter normal mode
-	this._normalMode();
+	this.is_cmd = false;
+	this.repeat = "";
+	this.cmd    = "";
+	var that = this;
+	that.convas.readKey(false, function fn(key) {
+		var ch = String.fromCharCode(key);
+		that.processKey(ch);
+		that.convas.readKey(false, fn);
+	});
 }
 
 
@@ -73,6 +82,26 @@ Vim.prototype.render = function()
 	}
 	else this._doRender(this.tabs[this.tabId], 0, 0,
 			this.convas.w, this.convas.h-1);
+
+	var pos = this.convas.getCursorPos();
+	if (this.last_status_line && !this.err_msg) {
+		this.convas.cursorTo(0, this.convas.h-1);
+		this.convas.setColor(FG_R|FG_G|FG_B);
+		this.convas.write(this.last_status_line);
+		delete this.last_status_line;
+	}
+	if (this.err_msg) {
+		this.convas.cursorTo(0, this.convas.h-1);
+		this.convas.setColor(FG_H|FG_R|FG_G|FG_B|BG_R);
+		this.convas.write(this.err_msg);
+		delete this.err_msg;
+	}
+	this.convas.setCursorPos(pos);
+
+	if (this.mode == 'CMDLINE') {
+		this._blankCmdLine();
+		this.convas.write(":" + this.cmd);
+	}
 }
 
 
@@ -110,80 +139,47 @@ Vim.prototype._doRender = function(win, x, y, w, h)
 }
 
 
-Vim.prototype._normalMode = function()
+Vim.prototype.processKey = function(ch)
 {
-	var that = this;
-	that.convas.readKey(false, function fn(key) {
-		var ch = String.fromCharCode(key);
-		switch (ch) {
-			// for debug now
-			case 'h':
-				that.convas.cursorTo(that.convas.buffer.x - 1,
-									 that.convas.buffer.y);
-				break;
-			case 'l':
-				that.convas.cursorTo(that.convas.buffer.x + 1,
-									 that.convas.buffer.y);
-				break;
-			case 'j':
-				that.convas.cursorTo(that.convas.buffer.x,
-									 that.convas.buffer.y + 1);
-				break;
-			case 'k':
-				that.convas.cursorTo(that.convas.buffer.x,
-									 that.convas.buffer.y - 1);
-				break;
-			case ':':
-				that._cmdLineMode();
-				return;
-			default:
-				console.log(ch + " <" + key + ">");
-		}
-		that.convas.readKey(false, fn);
-	});
-}
-
-
-Vim.prototype._cmdLineMode = function()
-{
-	var that = this;
-	var cmd  = "";
-	var pos  = that.convas.getCursorPos();
-
-	that._blankCmdLine();
-	that.convas.write(":");
-
-	that.convas.readKey(false, function fn(key) {
-		var ch = String.fromCharCode(key);
-		if (ch == '\r') {
-			if (cmd == "") {
-				that.convas.setCursorPos(pos);
-				that._normalMode();
-				return;
+	if (this.mode == 'NORMAL') {
+		if (this.is_cmd)
+			this.cmd += ch;
+		else {
+			if (/[0-9]/.test(ch)) this.repeat += ch;
+			else {
+				this.is_cmd = true;
+				this.repeat = parseInt(this.repeat);
+				this.cmd   += ch;
 			}
-			that.convas.setCursorPos(pos);
-			that._normalMode();
-			that.execScript(cmd);
-			return;
+		}
+
+		for (var i in vim_cmds) {
+			if (vim_cmds[i].regex.test(this.cmd)) {
+				this.is_cmd = false;
+				this.repeat = "";
+				this.cmd    = "";
+				vim_cmds[i].callback(this);
+				break;
+			}
+		}
+	}
+	else if (this.mode == 'CMDLINE') {
+		if (ch == '\r') {
+			this.mode = "NORMAL";
+			if (this.cmd) {
+				this.execScript(this.cmd);
+				this.last_status_line = ":" + this.cmd;
+				this.cmd = "";
+			}
 		}
 		else if (ch == '\b') {
-			if (cmd == '') {
-				that._blankCmdLine();
-				that.convas.setCursorPos(pos);
-				that._normalMode();
-				return;
-			}
-			cmd = cmd.slice(0, -1);
-			that._blankCmdLine();
-			that.convas.write(":" + cmd);
+			if (this.cmd) this.cmd = this.cmd.slice(0, -1);
+			else this.mode = "NORMAL";
 		}
-		else {
-			cmd += ch;
-			that._blankCmdLine();
-			that.convas.write(":" + cmd);
-		}
-		that.convas.readKey(false, fn);
-	});
+		else this.cmd += ch;
+	}
+
+	this.render();
 }
 
 
@@ -199,11 +195,7 @@ Vim.prototype._blankCmdLine = function()
 
 Vim.prototype._error = function(msg)
 {
-	var pos = this.convas.getCursorPos();
-	this._blankCmdLine();
-	this.convas.setColor(FG_H|FG_R|FG_G|FG_B|BG_R);
-	this.convas.write("E000: " + msg);
-	this.convas.setCursorPos(pos);
+	this.err_msg = msg;
 }
 
 
@@ -213,8 +205,10 @@ Vim.prototype.execScript = function(script)
 		this._error("TODO");
 	}
 
-	if (script == "new") this.win.splitY();
+	if (script == "new") this.win.split(false, false);
+	else if (script == "sp") this.win.split(false, true);
 	else if (script == "q") this.win.close();
+	else if (script == "debug") this.win.buffer.lines.push("Hi!\x00");
 	else this._error("Not an editor command: " + script);
 }
 
@@ -227,36 +221,78 @@ Vim.prototype.execScript = function(script)
 // note: the status line should NOT be included in <h>.
 function VimWindow(vim, pa)
 {
-	this.vim = vim;
-	this.pa  = pa;		// parent
+	this.vim        = vim;
+	this.pa         = pa;		// parent
+	this.line_start = 0;
+	this.buffer     = new VimBuffer(vim, "");
+	this.x = this.y = 0;
+
+	this.set = {};
+	for (var key in this.vim.default_set)
+		this.set[key] = this.vim.default_set[key];
 }
 
 
 VimWindow.prototype.render = function(buffer)
 {
-	this.status_line = "HELLO";
+	var lineno_len = 0;
+	if (this.set.nu) {
+		lineno_len = this.buffer.lines.length.toString().length + 1;
+		if (lineno_len < 4) lineno_len = 4;
+	}
+
+	var cpos = {x:0, y:0};
+
+	var y=0;
+	for (var i=this.line_start; i<this.buffer.lines.length; i++) {
+		buffer.cursorTo(0, y);
+		if (this.set.nu) {
+			lineno = '';
+			var spc = lineno_len - 1 - i.toString().length;
+			while (spc-- > 0) lineno += ' ';
+			lineno += i.toString();
+			lineno += ' ';
+			buffer.color = FG_H | FG_R | FG_G;
+			buffer.write(lineno);
+		}
+		var t = this.buffer.lines[i].split('');
+		buffer.color = FG_R | FG_G | FG_B;
+		for (var x=0; x<t.length; x++) {
+			if (t[x] != '\x00') buffer.write(t[x]);
+			if (x == this.x && i == this.y)
+				cpos = { x: buffer.x, y: buffer.y };
+		}
+		y++;
+	}
+	for (; y<buffer.h; y++) {
+		buffer.cursorTo(0, y);
+		buffer.color = FG_H | FG_B;
+		buffer.write("~");
+	}
+
+	buffer.cursorTo(cpos.x, cpos.y);
+	this.status_line = (this.y+1) + "," + (this.x+1) + "      100%";
+	while (this.status_line.length < buffer.w)
+		this.status_line = ' ' + this.status_line;
 }
 
 
-VimWindow.prototype.splitX = function()
-{
-}
-
-
-VimWindow.prototype.splitY = function()
+VimWindow.prototype.split = function(is_horizon, with_content)
 {
 	var win = new VimWindow(this.vim);
+	if (with_content)	// copy the content
+		win.buffer = this.buffer;
 
 	if (this.pa) {
-		if (this.pa.is_horizon) {
+		if (this.pa.is_horizon != is_horizon) {
 			var sp  = new VimWindowSplit(this.vim, this.pa,
-					false, win, this);
+					is_horizon, win, this);
 			win.pa  = sp;
 			this.pa = sp;
 			var idx = this.pa.wins.indexOf(this);
 			this.pa.wins[idx] = sp;
 		}
-		else {	// vertical
+		else {
 			win.pa  = this.pa;
 			var idx = this.pa.wins.indexOf(this);
 			this.pa.wins.splice(idx, 0, win);	// insert the win
@@ -264,14 +300,13 @@ VimWindow.prototype.splitY = function()
 	}
 	else {
 		var sp  = new VimWindowSplit(this.vim, this.pa,
-				false, win, this);
+				is_horizon, win, this);
 		win.pa  = sp;
 		this.pa = sp;
 		this.vim.tabs[this.vim.tabId] = sp;
 	}
 
 	this.vim.win = win;
-	this.vim.render();
 }
 
 
@@ -279,6 +314,19 @@ VimWindow.prototype.close = function()
 {
 	if (this.pa) this.pa.killWindow(this);
 	else this.vim.closeTab();
+}
+
+
+VimWindow.prototype.moveCursor = function(dx, dy)
+{
+	this.x += dx;
+	this.y += dy;
+	if (this.y < 0) this.y = 0;
+	else if (this.y >= this.buffer.lines.length)
+		this.y = this.buffer.lines.length-1;
+	if (this.x < 0) this.x = 0;
+	else if (this.x >= this.buffer.lines[this.y].length)
+		this.x = this.buffer.lines[this.y].length-1;
 }
 
 /**********************************************************************
@@ -312,5 +360,25 @@ VimWindowSplit.prototype.killWindow = function(win)
 	}
 
 	this.vim.render();
+}
+
+/**********************************************************************
+ *
+ * VimBuffer: process and store texts
+ *
+ */
+
+function VimBuffer(vim, text)
+{
+	this.vim = vim;
+	this.setText(text);
+}
+
+
+VimBuffer.prototype.setText = function(text)
+{
+	this.lines = text.split('\n');
+	if (!this.lines.length) this.lines[0] = "";
+	for (i in this.lines) this.lines[i] += '\x00';
 }
 
