@@ -1,4 +1,5 @@
 # Vim.js Components' Public API Document
+`OUT OF DATE`<hr>
 Written by eXerigumo Clanjor (哆啦比猫/兰威举)<br>
 
 
