@@ -98,22 +98,25 @@ Convas.prototype.readLine = function(is_echo, fn)
 }
 
 
-Convas.prototype.putChar = function(ch)
+Convas.prototype.putChar = function(ch, is_scroll)
 {
 	var x = this.buffer.x,
 		y = this.buffer.y;
 
-	this.buffer.write(ch);
+	this.buffer.write(ch, is_scroll);
+	if (is_scroll && this.buffer.is_scrolled)
+		this.refresh();
+
 	this._refreshCharAt(x, y, false);
 	this._refreshCharAt(this.buffer.x, this.buffer.y, true);
 	this._resetTimerSplash();
 }
 
 
-Convas.prototype.write = function(text)
+Convas.prototype.write = function(text, is_scroll)
 {
 	for (var i in text)
-		this.putChar(text[i]);
+		this.putChar(text[i], is_scroll);
 }
 
 
@@ -270,11 +273,17 @@ Convas.prototype._keyPress = function(key)
 		case CONVAS_STATE_READ_LINE:
 			if (this.is_echo) {
 				if (ch == '\r') this.putChar('\n');
-				else this.putChar(ch);
+				else if (ch != '\b') this.putChar(ch);
 			}
 
-			if (ch == '\b')
-				this.line_buf = this.line_buf.slice(0, -1);
+			if (ch == '\b') {
+				if (this.line_buf.length) {
+					this.line_buf = this.line_buf.slice(0, -1);
+					this.moveCursorBackward();
+					this.write(" ");
+					this.moveCursorBackward();
+				}
+			}
 			else if (ch == '\r') {
 				this.state = CONVAS_STATE_READY;
 				this.callback(this.line_buf);
@@ -295,6 +304,19 @@ Convas.prototype._keyDown = function(evt)
 			this._keyPress(key);
 			break;
 	}
+}
+
+
+Convas.prototype.moveCursorBackward = function()
+{
+	if (this.buffer.x == 0) return;
+
+	if (this.timer_splash) clearInterval(this.timer_splash);
+	this._refreshCharAt(this.buffer.x, this.buffer.y, false);
+
+	this.buffer.x--;
+
+	this._resetTimerSplash();
 }
 
 
@@ -366,23 +388,26 @@ ConvasBuffer.prototype.cursorTo = function(x, y)
 
 
 // advance the cursor. when arriving right edge, move to the next line.
-ConvasBuffer.prototype.advanceCursor = function()
+ConvasBuffer.prototype.advanceCursor = function(is_scroll)
 {
 	if (++this.x == this.w) {
 		this.x = 0;
-		if (++this.y == this.h)
-			this.y--;
+		if (++this.y == this.h) {
+			if (is_scroll) this.scrollDown();
+			else this.y--;
+		}
 	}
 }
 
 
 // put char at the cursor, advancing the cursor if no_advancing_cursor
 // is set to false. THIS WON'T DEAL WITH SPECIAL CHARACTERS(e.g. '\n')!
-ConvasBuffer.prototype.putChar = function(ch, no_advancing_cursor)
+ConvasBuffer.prototype.putChar = function(ch, no_advancing_cursor,
+		is_scroll)
 {
 	this.buffer[this.y*this.w + this.x] = [this.color, ch];
 	if (!no_advancing_cursor)
-		this.advanceCursor();
+		this.advanceCursor(is_scroll);
 }
 
 
@@ -415,24 +440,37 @@ ConvasBuffer.prototype.copyTo = function(
 }
 
 
-ConvasBuffer.prototype.newLine = function()
+ConvasBuffer.prototype.newLine = function(is_scroll)
 {
 	//this.putChar('\n', "no advancing cursor");
 	this.x = 0;
-	if (++this.y == this.h)
-		this.y--;
+	if (++this.y == this.h) {
+		if (is_scroll) this.scrollDown();
+		else this.y--;
+	}
 }
 
 
 // write a string into the buffer, dealing with special
 // characters (e.g. '\n').
-ConvasBuffer.prototype.write = function(text)
+ConvasBuffer.prototype.write = function(text, is_scroll)
 {
+	this.is_scrolled = false;
 	for (var i=0; i<text.length; i++) {
-		if (text[i] == '\n') this.newLine();
+		if (text[i] == '\n') this.newLine(is_scroll);
 		// TODO: '\t'
-		else this.putChar(text[i]);
+		else this.putChar(text[i], false, is_scroll);
 	}
+}
+
+
+ConvasBuffer.prototype.scrollDown = function()
+{
+	this.buffer.splice(0, this.w);
+	for (var i=0; i<this.w; i++)
+		this.buffer.push([FG_R | FG_G | FG_B, ' ']);
+	this.y--;
+	this.is_scrolled = true;
 }
 
 

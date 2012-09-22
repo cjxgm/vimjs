@@ -12,14 +12,16 @@
  *
  */
 
-function Vim(id)
+function Vim(convas, fn_quit)
 {
 	this.default_set = { nu: true };
-	this.mode  = 'NORMAL';
-	this.convas = new Convas(id, 80, 24, 11);
-	this.tabs  = [new VimWindow(this)];
-	this.tabId = 0;
-	this.win   = this.tabs[this.tabId];
+	this.mode        = 'NORMAL';
+	this.convas      = convas;
+	this.tabs        = [new VimWindow(this)];
+	this.tabId       = 0;
+	this.win         = this.tabs[this.tabId];
+	this.fn_quit     = fn_quit;
+	this.quited      = false;
 	this.render();
 
 	// show initial screen
@@ -62,6 +64,7 @@ function Vim(id)
 	that.convas.readKey(false, function fn(key) {
 		var ch = String.fromCharCode(key);
 		that.processKey(ch);
+		if (that.quited) return;
 		that.convas.readKey(false, fn);
 	});
 }
@@ -168,6 +171,7 @@ Vim.prototype.processKey = function(ch)
 			this.mode = "NORMAL";
 			if (this.cmd) {
 				this.execScript(this.cmd);
+				if (this.quited) return;
 				this.last_status_line = ":" + this.cmd;
 				this.cmd = "";
 			}
@@ -180,6 +184,26 @@ Vim.prototype.processKey = function(ch)
 	}
 
 	this.render();
+}
+
+
+Vim.prototype.closeTab = function()
+{
+	if (this.tabs.length == 1) this.quit();
+	else {
+		this.tabs.splice(this.tabId, 1);		// remove current tab
+		if (this.tabId >= this.tabs.length)
+			this.tabId = this.tabs.length-1;
+		this.win = this.tabs[this.tabId];
+	}
+}
+
+
+Vim.prototype.quit = function()
+{
+	this.convas.clear();
+	this.fn_quit();
+	this.quited = true;
 }
 
 
