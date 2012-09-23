@@ -1,8 +1,9 @@
+
 <!doctype html>
 <meta charset="utf-8">
 
 <!--
-Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2010-2012.
+Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2012.
 Under GPLv2. ABSOLUTELY NO WARRANTY!
 -->
 
@@ -14,23 +15,5 @@ Under GPLv2. ABSOLUTELY NO WARRANTY!
 <script src="fs.js"></script>
 <script src="vim.js"></script>
 <script src="vim_cmds.js"></script>
-<script>
-	var convas = new Convas("vimjs", 80, 24, 11);
-	(function userLogin(){
-		 convas.write("Welcome to vim.js!\n", true);
-		 convas.write("You can login with \"local\"" +
-				 " for local use.\n\n", true);
-		 convas.write("login: ", true);
-		 convas.readLine(true, function fnLogin(login){
-			 if (login == "local") new Vim(convas, userLogin);
-			 else {
-				 convas.write("Password: ", true);
-				 convas.readLine(false, function fnPassword(password){
-					 convas.write("\nLogin incorrect\n\n", true);
-					 userLogin();
-				 });
-			 }
-		 });
-	})();
-</script>
+<script src="index.js"></script>
 

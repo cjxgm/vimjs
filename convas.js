@@ -2,7 +2,7 @@
 /**** convas.js *******************************************************
  * CONsole canVAS: A UNIX console implementation using HTML5 <canvas>
  *
- * Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2010-2012.
+ * Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2012.
  * Under GPLv2. ABSOLUTELY NO WARRANTY!
  **********************************************************************/
 

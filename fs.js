@@ -2,7 +2,7 @@
 /**** fs.js ***********************************************************
  * File System: A UNIX style file system.
  *
- * Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2010-2012.
+ * Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2012.
  * Under GPLv2. ABSOLUTELY NO WARRANTY!
  **********************************************************************/
 
