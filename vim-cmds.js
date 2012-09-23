@@ -32,6 +32,22 @@ vim_cmds.push({
 	}
 });
 
+vim_cmds.push({
+	regex: /o/,
+	callback: function(vim) {
+		vim.win.newLineAfter();
+		vim.mode = 'INSERT';
+	}
+});
+
+vim_cmds.push({
+	regex: /O/,
+	callback: function(vim) {
+		vim.win.newLineBefore();
+		vim.mode = 'INSERT';
+	}
+});
+
 
 // navigation
 vim_cmds.push({
