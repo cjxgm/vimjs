@@ -44,11 +44,11 @@ function Vim(convas, fn_quit)
 	this.convas.setColor(FG_R|FG_G|FG_B);
 	this.convas.write("       for information");
 	this.convas.cursorTo(17, 15);
-	this.convas.write("type  :login");
+	this.convas.write("type  :vimjs");
 	this.convas.setColor(FG_B);
 	this.convas.write("<Enter>");
 	this.convas.setColor(FG_R|FG_G|FG_B);
-	this.convas.write("           to log in");
+	this.convas.write("           to get the source code");
 	this.convas.cursorTo(17, 16);
 	this.convas.write("type  :q");
 	this.convas.setColor(FG_B);
@@ -219,7 +219,7 @@ Vim.prototype._blankCmdLine = function()
 
 Vim.prototype._error = function(msg)
 {
-	this.err_msg = msg;
+	this.err_msg = "E000: " + msg;
 }
 
 
@@ -229,9 +229,43 @@ Vim.prototype.execScript = function(script)
 		this._error("TODO");
 	}
 
-	if (script == "new") this.win.split(false, false);
-	else if (script == "sp") this.win.split(false, true);
-	else if (script == "q") this.win.close();
+	var result;
+
+	if (result = /^(v)ne(w)?|new$/.exec(script)) {
+		/* result:
+		 * 		[0] -> the whole string
+		 * 		[1] -> "v" or undefined
+		 */
+		this.win.split(result[1] == "v", false);
+	}
+	else if (result = /^(v)?sp(lit)?$/.exec(script)) {
+		/* result:
+		 * 		[0] -> the whole string
+		 * 		[1] -> "v" or undefined
+		 */
+		this.win.split(result[1] == "v", true);
+	}
+	else if (/^q(uit)?$/.test(script)) this.win.close();
+	else if (result = /^set\s+((no)?([a-z]+)(=(\d+))?)$/.exec(script)) {
+		/* result:
+		 * 		[0] -> the whole string
+		 * 		[1] -> the whole set
+		 * 		[2] -> "no" or undefined
+		 * 		[3] -> the option to set
+		 * 		[4] -> has "=value" part or not
+		 * 		[5] -> the value to set
+		 */
+		if (result[2] && result[4])
+			this._error("Invalid argument: " + result[1]);
+		else if (result[2]) delete this.win.set[result[3]];
+		else {
+			if (result[5]) result[5] = parseInt(result[5]);
+			else result[5] = true;
+			this.win.set[result[3]] = result[5];
+		}
+	}
+	else if (script == "vimjs")
+		window.open("https://github.com/cjxgm/vimjs", "_blank");
 	else if (script == "debug") this.win.buffer.lines.push("Hi!\x00");
 	else this._error("Not an editor command: " + script);
 }
