@@ -1,5 +1,5 @@
 
-/**** vim_cmds.js *****************************************************
+/**** vim-cmds.js *****************************************************
  * Vim Commands: The command set of vim
  *
  * Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2012.
