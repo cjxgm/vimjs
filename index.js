@@ -7,6 +7,7 @@
  **********************************************************************/
 
 var convas = new Convas("vimjs", 80, 24, 11);
+var vim;
 
 (function userLogin(){
 	 convas.write("Welcome to vim.js!\n", true);
@@ -14,7 +15,7 @@ var convas = new Convas("vimjs", 80, 24, 11);
 			 " for local use.\n\n", true);
 	 convas.write("login: ", true);
 	 convas.readLine(true, function(login){
-		 if (login == "local") new Vim(convas, userLogin);
+		 if (login == "local") vim = new Vim(convas, userLogin);
 		 else {
 			 convas.write("Password: ", true);
 			 convas.readLine(false, function(password){
