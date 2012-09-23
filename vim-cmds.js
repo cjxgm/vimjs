@@ -8,6 +8,8 @@
 
 var vim_cmds = [];
 
+
+// mode switching
 vim_cmds.push({
 	regex: /:/,
 	callback: function(vim) {
@@ -16,6 +18,8 @@ vim_cmds.push({
 	}
 });
 
+
+// navigation
 vim_cmds.push({
 	regex: /h/,
 	callback: function(vim) {
@@ -41,6 +45,19 @@ vim_cmds.push({
 	regex: /k/,
 	callback: function(vim) {
 		vim.win.moveCursor(0, -1);
+	}
+});
+
+vim_cmds.push({
+	regex: /g([tT])/,
+	callback: function(vim, result) {
+		/* result:
+		 * 		[0] -> the whole string
+		 * 		[1] -> "t" or "T"
+		 */
+		vim.tab_id += vim.tabs.length + (result[1] == "t" ? 1 : -1);
+		vim.tab_id %= vim.tabs.length;
+		vim.win = vim.tab_current_wins[vim.tab_id];
 	}
 });
 

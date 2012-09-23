@@ -18,8 +18,9 @@ function Vim(convas, fn_quit)
 	this.mode        = 'NORMAL';
 	this.convas      = convas;
 	this.tabs        = [new VimWindow(this)];
-	this.tabId       = 0;
-	this.win         = this.tabs[this.tabId];
+	this.tab_current_wins = [this.tabs[0]];
+	this.tab_id       = 0;
+	this.win         = this.tabs[0];
 	this.fn_quit     = fn_quit;
 	this.quited      = false;
 	this.render();
@@ -72,30 +73,58 @@ function Vim(convas, fn_quit)
 
 Vim.prototype.render = function()
 {
-	if (this.tabs[this.tabId] === this.win) {
-		var buf = new ConvasBuffer(this.convas.w, this.convas.h-1);
-		this.win.render(buf);
-		this.convas.renderBuffer(buf, 0, 0);
+	if (this.tabs.length > 1) {
+		// render tabs navigation bar
+		this.convas.cursorTo(0, 0);
+		this.convas.setColor(BG_H | BG_R | BG_G | BG_B);
+		this.convas.write(formatTextRight("", this.convas.w-1));
+		this.convas.setColor(BG_R | BG_G | BG_B);
+		this.convas.write("X");
+		this.convas.cursorTo(0, 0);
+		for (var i in this.tabs) {
+			if (i == this.tab_id) 
+				this.convas.setColor(FG_H | FG_R | FG_G | FG_B);
+			else
+				this.convas.setColor(BG_R | BG_G | BG_B);
+			this.convas.write(" " +
+					this.tab_current_wins[i].buffer.name + " ");
+		}
 
-		this.convas.cursorTo(0, this.convas.h-1);
-		this.convas.setColor(FG_R|FG_G|FG_B);
-		this.convas.write(this.win.status_line);
-
-		this.convas.cursorTo(buf.x, buf.y);
+		this._renderCurrentTab(0, 1, this.convas.w, this.convas.h-1);
 	}
-	else this._doRender(this.tabs[this.tabId], 0, 0,
-			this.convas.w, this.convas.h-1);
+	else this._renderCurrentTab(0, 0, this.convas.w, this.convas.h);
+}
+
+
+Vim.prototype._renderCurrentTab = function(x, y, w, h)
+{
+	if (this.tabs[this.tab_id] === this.win) {
+		var buf = new ConvasBuffer(w, h-1);
+		this.win.render(buf);
+		this.convas.renderBuffer(buf, x, y);
+
+		this.convas.cursorTo(x, y+h-1);
+		this.convas.setColor(FG_R | FG_G | FG_B);
+		var status_line = formatTextLeft((this.win.y+1) +
+				"," + (this.win.x+1), 14);
+		status_line += formatTextLeft("All", 3);
+		status_line = formatTextRight(status_line, w);
+		this.convas.write(status_line);
+
+		this.convas.cursorTo(buf.x + x, buf.y + y);
+	}
+	else this._doRender(this.tabs[this.tab_id], x, y, w, h-1);
 
 	var pos = this.convas.getCursorPos();
 	if (this.last_status_line && !this.err_msg) {
 		this.convas.cursorTo(0, this.convas.h-1);
-		this.convas.setColor(FG_R|FG_G|FG_B);
+		this.convas.setColor(FG_R | FG_G | FG_B);
 		this.convas.write(this.last_status_line);
 		delete this.last_status_line;
 	}
 	if (this.err_msg) {
 		this.convas.cursorTo(0, this.convas.h-1);
-		this.convas.setColor(FG_H|FG_R|FG_G|FG_B|BG_R);
+		this.convas.setColor(FG_H | FG_R | FG_G | FG_B | BG_R);
 		this.convas.write(this.err_msg);
 		delete this.err_msg;
 	}
@@ -122,9 +151,12 @@ Vim.prototype._doRender = function(win, x, y, w, h)
 			var buf = new ConvasBuffer(w, 1);
 			buf.color = BG_H | BG_R | BG_G | BG_B;
 			if (win === this.win) buf.color |= FG_H;
-			for (var i=0; i<w; i++) buf.write(" ");
-			buf.cursorTo(0, 0);
-			buf.write(win.status_line);
+			var status_line = formatTextLeft((win.y+1) +
+					"," + (win.x+1), 14);
+			status_line += formatTextLeft("All", 3);
+			status_line = formatTextTwoSides(win.buffer.name,
+					status_line, w);
+			buf.write(status_line);
 			this.convas.renderBuffer(buf, x, y+h-1);
 		}
 		return;
@@ -157,11 +189,12 @@ Vim.prototype.processKey = function(ch)
 		}
 
 		for (var i in vim_cmds) {
-			if (vim_cmds[i].regex.test(this.cmd)) {
+			var result;
+			if (result = vim_cmds[i].regex.exec(this.cmd)) {
 				this.is_cmd = false;
 				this.repeat = "";
 				this.cmd    = "";
-				vim_cmds[i].callback(this);
+				vim_cmds[i].callback(this, result);
 				break;
 			}
 		}
@@ -191,10 +224,11 @@ Vim.prototype.closeTab = function()
 {
 	if (this.tabs.length == 1) this.quit();
 	else {
-		this.tabs.splice(this.tabId, 1);		// remove current tab
-		if (this.tabId >= this.tabs.length)
-			this.tabId = this.tabs.length-1;
-		this.win = this.tabs[this.tabId];
+		this.tabs.splice(this.tab_id, 1);		// remove current tab
+		this.tab_current_wins.splice(this.tab_id, 1);
+		if (this.tab_id >= this.tabs.length)
+			this.tab_id = this.tabs.length-1;
+		this.win = this.tab_current_wins[this.tab_id];
 	}
 }
 
@@ -231,12 +265,12 @@ Vim.prototype.execScript = function(script)
 
 	var result;
 
-	if (result = /^(v)ne(w)?|new$/.exec(script)) {
+	if (result = /^((v)ne(w)?|new)$/.exec(script)) {
 		/* result:
 		 * 		[0] -> the whole string
-		 * 		[1] -> "v" or undefined
+		 * 		[2] -> "v" or undefined
 		 */
-		this.win.split(result[1] == "v", false);
+		this.win.split(result[2] == "v", false);
 	}
 	else if (result = /^(v)?sp(lit)?$/.exec(script)) {
 		/* result:
@@ -263,6 +297,13 @@ Vim.prototype.execScript = function(script)
 			else result[5] = true;
 			this.win.set[result[3]] = result[5];
 		}
+	}
+	else if (script == "tabnew") {
+		var tab = new VimWindow(this);
+		this.tabs.splice(this.tab_id+1, 0, tab);
+		this.tab_current_wins.splice(this.tab_id+1, 0, tab);
+		this.tab_id++;
+		this.win = tab;
 	}
 	else if (script == "vimjs")
 		window.open("https://github.com/cjxgm/vimjs", "_blank");
@@ -329,9 +370,6 @@ VimWindow.prototype.render = function(buffer)
 	}
 
 	buffer.cursorTo(cpos.x, cpos.y);
-	this.status_line = (this.y+1) + "," + (this.x+1) + "      100%";
-	while (this.status_line.length < buffer.w)
-		this.status_line = ' ' + this.status_line;
 }
 
 
@@ -361,7 +399,7 @@ VimWindow.prototype.split = function(is_horizon, with_content)
 				is_horizon, win, this);
 		win.pa  = sp;
 		this.pa = sp;
-		this.vim.tabs[this.vim.tabId] = sp;
+		this.vim.tabs[this.vim.tab_id] = sp;
 	}
 
 	this.vim.win = win;
@@ -413,11 +451,11 @@ VimWindowSplit.prototype.killWindow = function(win)
 	if (this.wins.length == 1) {
 		if (this.pa)
 			this.pa.wins[this.pa.wins.indexOf(this)] = this.vim.win;
-		else this.vim.tabs[this.vim.tabId] = this.vim.win;
+		else this.vim.tabs[this.vim.tab_id] = this.vim.win;
 		this.vim.win.pa = undefined;
 	}
 
-	this.vim.render();
+	this.vim.tab_current_wins[this.vim.tab_id] = this.vim.win;
 }
 
 /**********************************************************************
@@ -426,10 +464,11 @@ VimWindowSplit.prototype.killWindow = function(win)
  *
  */
 
-function VimBuffer(vim, text)
+function VimBuffer(vim, text, name)
 {
 	this.vim = vim;
 	this.setText(text);
+	this.name = (name ? name : "[No Name]");
 }
 
 
