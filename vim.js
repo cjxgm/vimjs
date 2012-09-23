@@ -358,9 +358,9 @@ VimWindow.prototype.render = function(buffer)
 		buffer.cursorTo(0, y);
 		if (this.set.nu) {
 			lineno = '';
-			var spc = lineno_len - 1 - i.toString().length;
+			var spc = lineno_len - 1 - (i+1).toString().length;
 			while (spc-- > 0) lineno += ' ';
-			lineno += i.toString();
+			lineno += (i+1).toString();
 			lineno += ' ';
 			buffer.color = FG_H | FG_R | FG_G;
 			buffer.write(lineno);
@@ -444,6 +444,35 @@ VimWindow.prototype.moveCursor = function(dx, dy)
 		this.x = this.buffer.lines[this.y].length-1;
 }
 
+
+VimWindow.prototype.input = function(ch)
+{
+	if (ch == '\r') {
+		this.buffer.insertNewLine(this.x, this.y);
+		this.x = 0;
+		this.moveCursor(0, 1);
+	}
+	else {
+		this.buffer.insertCharAt(this.x, this.y, ch);
+		this.moveCursor(1, 0);
+	}
+}
+
+
+VimWindow.prototype.newLineAfter = function(ch)
+{
+	this.buffer.newLine(this.y+1);
+	this.moveCursor(0, 1);
+}
+
+
+VimWindow.prototype.newLineBefore = function(ch)
+{
+	this.buffer.newLine(this.y);
+	this.moveCursor(0, 0);	// this is a must; for adapting cursor pos
+}
+
+
 /**********************************************************************
  *
  * VimWindowSplit: splitter for vim windows
@@ -496,5 +525,29 @@ VimBuffer.prototype.setText = function(text)
 	this.lines = text.split('\n');
 	if (!this.lines.length) this.lines[0] = "";
 	for (i in this.lines) this.lines[i] += '\x00';
+}
+
+
+VimBuffer.prototype.insertCharAt = function(x, y, ch)
+{
+	if (ch == '\r') this.lines.splice(y+1, 0, '\x00');
+	else {
+		var line = this.lines[y];
+		this.lines[y] = line.slice(0, x) + ch + line.slice(x);
+	}
+}
+
+
+VimBuffer.prototype.newLine = function(y)
+{
+	this.lines.splice(y, 0, '\x00');
+}
+
+
+VimBuffer.prototype.insertNewLine = function(x, y)
+{
+	var newline = this.lines[y].slice(x);
+	this.lines[y] = this.lines[y].slice(0, x) + '\x00';
+	this.lines.splice(y+1, 0, newline);
 }
 
