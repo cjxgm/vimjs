@@ -103,12 +103,10 @@ Vim.prototype._renderCurrentTab = function(x, y, w, h)
 		this.win.render(buf);
 		this.convas.renderBuffer(buf, x, y);
 
+		// write status line (cursor pos indicator, etc.)
 		this.convas.cursorTo(x, y+h-1);
 		this.convas.setColor(FG_R | FG_G | FG_B);
-		var status_line = formatTextLeft((this.win.y+1) +
-				"," + (this.win.x+1), 14);
-		status_line += formatTextLeft("All", 3);
-		status_line = formatTextRight(status_line, w);
+		var status_line = formatTextRight(this.win.status_line, w);
 		this.convas.write(status_line);
 
 		this.convas.cursorTo(buf.x + x, buf.y + y);
@@ -151,11 +149,8 @@ Vim.prototype._doRender = function(win, x, y, w, h)
 			var buf = new ConvasBuffer(w, 1);
 			buf.color = BG_H | BG_R | BG_G | BG_B;
 			if (win === this.win) buf.color |= FG_H;
-			var status_line = formatTextLeft((win.y+1) +
-					"," + (win.x+1), 14);
-			status_line += formatTextLeft("All", 3);
-			status_line = formatTextTwoSides(win.buffer.name,
-					status_line, w);
+			var status_line = formatTextTwoSides(win.buffer.name,
+					win.status_line, w);
 			buf.write(status_line);
 			this.convas.renderBuffer(buf, x, y+h-1);
 		}
@@ -356,10 +351,15 @@ VimWindow.prototype.render = function(buffer)
 		}
 		var t = this.buffer.lines[i].split('');
 		buffer.color = FG_R | FG_G | FG_B;
+		this.ix = 0;
 		for (var x=0; x<t.length; x++) {
+			if (i == this.y) {
+				if (x == this.x)
+					cpos = { x: buffer.x, y: buffer.y };
+				if (x < this.x)
+					this.ix++;
+			}
 			if (t[x] != '\x00') buffer.write(t[x]);
-			if (x == this.x && i == this.y)
-				cpos = { x: buffer.x, y: buffer.y };
 		}
 		y++;
 	}
@@ -370,6 +370,9 @@ VimWindow.prototype.render = function(buffer)
 	}
 
 	buffer.cursorTo(cpos.x, cpos.y);
+
+	this.status_line = formatTextLeft((this.y+1) + "," + (this.x+1), 14);
+	this.status_line += formatTextLeft("All", 3);
 }
 
 
