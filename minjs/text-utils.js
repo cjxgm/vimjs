@@ -1,0 +1,1 @@
+function formatTextLeft(a,b){for(a=a.slice(0,b);a.length<b;)a+=" ";return a}function formatTextRight(a,b){for(a=a.slice(0,b);a.length<b;)a=" "+a;return a}function formatTextTwoSides(a,b,c){return a+formatTextRight(b,c-a.length)};

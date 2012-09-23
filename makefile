@@ -1,5 +1,5 @@
 
-minify: minify-js minify-index
+minify: clean minify-js minify-index
 
 minify-js:
 	@echo -e "\e[0;33mcreating directory \e[1;35mminjs/\e[m..."
