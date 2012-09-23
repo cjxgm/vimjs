@@ -6,3 +6,24 @@
  * Under GPLv2. ABSOLUTELY NO WARRANTY!
  **********************************************************************/
 
+function formatTextLeft(text, width)
+{
+	text = text.slice(0, width);
+	while (text.length < width) text += ' ';
+	return text;
+}
+
+
+function formatTextRight(text, width)
+{
+	text = text.slice(0, width);
+	while (text.length < width) text = ' ' + text;
+	return text;
+}
+
+
+function formatTextTwoSides(left, right, width)
+{
+	return left + formatTextRight(right, width-left.length);
+}
+
