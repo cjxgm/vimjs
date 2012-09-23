@@ -1,19 +1,14 @@
 ﻿# vim.js - 把 vim73 的所有功能全部搬到 web 上！
-Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2010-2012.<br>
-Licensed under GPLv2. ABSOLUTELY NO WARRANTY! See LICENSE for details.
+Copyright (C) eXerigumo Clanjor (哆啦比猫/兰威举), 2012.<br>
+Licensed under GPLv2. ABSOLUTELY NO WARRANTY! See COPYING for details.
 
-## !!! NOTICE !!!
-
-English documents are coming soon...
-
-
-## 2012-08-19 前待办
+## 2012-09-30 前待办
 
 * 基本编辑命令
 * 基于 local storage 的文件存储
-* 登录功能
+* 登录功能(local)
 * 模式：插入模式，普通模式，底行命令模式
-* 多 buffers 和窗口分割
+* 多 buffers 和窗口分割和 tabs
 * 行号
 * 显示错误消息（vim 风格的）
 * :set tabstop=xxx
@@ -26,3 +21,4 @@ English documents are coming soon...
 * :nmap
 * q 录制
 * :\*\*\*s/.../.../\*\*
+* And more
