@@ -1,0 +1,1 @@
+var vim_cmds=[];vim_cmds.push({regex:/:/,callback:function(a){a.cmd="";a.mode="CMDLINE"}});vim_cmds.push({regex:/h/,callback:function(a){a.win.moveCursor(-1,0)}});vim_cmds.push({regex:/l/,callback:function(a){a.win.moveCursor(1,0)}});vim_cmds.push({regex:/j/,callback:function(a){a.win.moveCursor(0,1)}});vim_cmds.push({regex:/k/,callback:function(a){a.win.moveCursor(0,-1)}});
