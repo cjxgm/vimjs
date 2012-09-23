@@ -113,6 +113,7 @@ Vim.prototype._renderCurrentTab = function(x, y, w, h)
 	}
 	else this._doRender(this.tabs[this.tab_id], x, y, w, h-1);
 
+	// render error msg or last cmd
 	var pos = this.convas.getCursorPos();
 	if (this.last_status_line && !this.err_msg) {
 		this.convas.cursorTo(0, this.convas.h-1);
@@ -126,6 +127,14 @@ Vim.prototype._renderCurrentTab = function(x, y, w, h)
 		this.convas.write(this.err_msg);
 		delete this.err_msg;
 	}
+
+	// render "-- INSERT --"
+	if (this.mode == 'INSERT') {
+		this.convas.cursorTo(0, this.convas.h-1);
+		this.convas.setColor(FG_H | FG_R | FG_G | FG_B);
+		this.convas.write("-- " + this.mode + " --");
+	}
+
 	this.convas.setCursorPos(pos);
 
 	if (this.mode == 'CMDLINE') {
@@ -209,6 +218,13 @@ Vim.prototype.processKey = function(ch)
 			else this.mode = "NORMAL";
 		}
 		else this.cmd += ch;
+	}
+	else if (this.mode == 'INSERT') {
+		if (ch == String.fromCharCode(27)){
+			this.mode = 'NORMAL';
+			this.win.moveCursor(-1, 0);
+		}
+		else this.win.input(ch);
 	}
 
 	this.render();

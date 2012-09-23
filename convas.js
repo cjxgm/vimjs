@@ -303,6 +303,8 @@ Convas.prototype._keyDown = function(evt)
 		case '\b':
 			this._keyPress(key);
 			break;
+		default:
+			if (key == 27) this._keyPress(key);
 	}
 }
 

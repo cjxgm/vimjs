@@ -13,8 +13,22 @@ var vim_cmds = [];
 vim_cmds.push({
 	regex: /:/,
 	callback: function(vim) {
-		vim.cmd  = "";
 		vim.mode = 'CMDLINE';
+	}
+});
+
+vim_cmds.push({
+	regex: /i/,
+	callback: function(vim) {
+		vim.mode = 'INSERT';
+	}
+});
+
+vim_cmds.push({
+	regex: /a/,
+	callback: function(vim) {
+		vim.win.moveCursor(1, 0);
+		vim.mode = 'INSERT';
 	}
 });
 
