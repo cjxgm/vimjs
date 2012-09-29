@@ -14,7 +14,7 @@
 
 function Vim(convas, fn_quit)
 {
-	this.default_set = { nu: true };
+	this.default_set = { nu: true, ts: 4 };
 	this.mode        = 'NORMAL';
 	this.convas      = convas;
 	this.tabs        = [new VimWindow(this)];
@@ -111,7 +111,12 @@ Vim.prototype._renderCurrentTab = function(x, y, w, h)
 
 		this.convas.cursorTo(buf.x + x, buf.y + y);
 	}
-	else this._doRender(this.tabs[this.tab_id], x, y, w, h-1);
+	else {
+		this._doRender(this.tabs[this.tab_id], x, y, w, h-1);
+		var pos = this.convas.getCursorPos();
+		this._blankCmdLine();
+		this.convas.setCursorPos(pos);
+	}
 
 	// render error msg or last cmd
 	var pos = this.convas.getCursorPos();
@@ -126,6 +131,7 @@ Vim.prototype._renderCurrentTab = function(x, y, w, h)
 		this.convas.setColor(FG_H | FG_R | FG_G | FG_B | BG_R);
 		this.convas.write(this.err_msg);
 		delete this.err_msg;
+		delete this.last_status_line;
 	}
 
 	// render "-- INSERT --"
@@ -262,16 +268,18 @@ Vim.prototype._blankCmdLine = function()
 }
 
 
-Vim.prototype._error = function(msg)
+Vim.prototype._error = function(errno, msg)
 {
-	this.err_msg = "E000: " + msg;
+	errno = '' + errno;
+	while (errno.length < 3) errno = '0' + errno;
+	this.err_msg = "E" + errno + ": " + msg;
 }
 
 
 Vim.prototype.execScript = function(script)
 {
 	if (script.indexOf('\n') != -1) {
-		this._error("TODO");
+		this._error(0, "TODO");
 	}
 
 	var result;
@@ -301,12 +309,15 @@ Vim.prototype.execScript = function(script)
 		 * 		[5] -> the value to set
 		 */
 		if (result[2] && result[4])
-			this._error("Invalid argument: " + result[1]);
-		else if (result[2]) delete this.win.set[result[3]];
+			this._error(474, "Invalid argument: " + result[1]);
 		else {
-			if (result[5]) result[5] = parseInt(result[5]);
-			else result[5] = true;
-			this.win.set[result[3]] = result[5];
+			if (result[2]) result[5] = false;
+			else if (!result[5]) result[5] = true;
+			if (this.win.set[result[3]] !== undefined)
+				this.win.set[result[3]] = result[5];
+			else if (this.win.buffer.set[result[3]] !== undefined)
+				this.win.buffer.set[result[3]] = result[5];
+			else this._error(474, "Invalid argument: " + result[1]);
 		}
 	}
 	else if (script == "tabnew") {
@@ -316,10 +327,25 @@ Vim.prototype.execScript = function(script)
 		this.tab_id++;
 		this.win = tab;
 	}
+	else if (/^help\s+iccf$/.test(script)) {
+		this.execScript("new");
+		this.execScript("set nonu");
+		this.win.buffer.setText(
+				"Vim is Charityware.  You can use and copy it as much " +
+				"as you like, but you are\n" +
+				"encouraged to make a donation for needy children in " +
+				"Uganda.  Please see visit\n" +
+				"the ICCF web site, available at these URLs:\n\n" +
+				"\thttp://iccf-holland.org/\n" +
+				"\thttp://www.vim.org/iccf/\n" +
+				"\thttp://www.iccf.nl/\n\n");
+		this.win.buffer.name = "uganda.txt [Help]";
+		this.win.buffer.set.ro = true;
+	}
 	else if (script == "vimjs")
 		window.open("https://github.com/cjxgm/vimjs", "_blank");
 	else if (script == "debug") this.win.buffer.lines.push("Hi!\x00");
-	else this._error("Not an editor command: " + script);
+	else this._error(492, "Not an editor command: " + script);
 }
 
 /**********************************************************************
@@ -517,6 +543,10 @@ function VimBuffer(vim, text, name)
 	this.vim = vim;
 	this.setText(text);
 	this.name = (name ? name : "[No Name]");
+	this.set = {
+		ro: false,
+		modified: false
+	};
 }
 
 

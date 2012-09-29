@@ -6,7 +6,7 @@
  * Under GPLv2. ABSOLUTELY NO WARRANTY!
  **********************************************************************/
 
-var convas = new Convas("vimjs", 80, 24, 11);
+var convas = new Convas("vimjs", 80, 24, 16);
 var vim;
 
 (function userLogin(){
