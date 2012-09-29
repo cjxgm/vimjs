@@ -15,7 +15,10 @@ var vim;
 			 " for local use.\n\n", true);
 	 convas.write("login: ", true);
 	 convas.readLine(true, function(login){
-		 if (login == "local") vim = new Vim(convas, userLogin);
+		 if (login == "local") {
+			 var fs = new FSLocalStorage();
+			 vim = new Vim(convas, fs, userLogin);
+		 }
 		 else {
 			 convas.write("Password: ", true);
 			 convas.readLine(false, function(password){

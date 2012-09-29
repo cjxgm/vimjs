@@ -12,11 +12,12 @@
  *
  */
 
-function Vim(convas, fn_quit)
+function Vim(convas, fs, fn_quit)
 {
 	this.default_set = { nu: true, ts: 4 };
 	this.mode        = 'NORMAL';
 	this.convas      = convas;
+	this.fs          = fs;
 	this.tabs        = [new VimWindow(this)];
 	this.tab_current_wins = [this.tabs[0]];
 	this.tab_id      = 0;
@@ -166,7 +167,7 @@ Vim.prototype._doRender = function(win, x, y, w, h)
 			if (win === this.win) buf.color |= FG_H;
 			var status_line = win.buffer.name;
 			if (win.buffer.set.modified) status_line += ' [+]';
-			if (win.buffer.set.ro) status_line += ' [RO]';
+			if (win.buffer.set.ro) status_line += '[RO]';
 			var status_line = formatTextTwoSides(status_line,
 					win.status_line, w);
 			buf.write(status_line);
@@ -282,8 +283,6 @@ Vim.prototype._blankCmdLine = function()
 
 Vim.prototype._error = function(errno, msg)
 {
-	errno = '' + errno;
-	while (errno.length < 3) errno = '0' + errno;
 	this.err_msg = "E" + errno + ": " + msg;
 }
 
@@ -310,7 +309,16 @@ Vim.prototype.execScript = function(script)
 		 */
 		this.win.split(result[1] == "v", true);
 	}
-	else if (/^q(uit)?$/.test(script)) this.win.close();
+	else if (result = /^q(uit)?(!)?$/.exec(script)) {
+		/* result:
+		 * 		[0] -> the whole string
+		 * 		[2] -> "!" or undefined
+		 */
+		if (this.win.buffer.set.modified && !result[2])
+			this._error(37,
+					"No write since last change (add ! to override)");
+		else this.win.close();
+	}
 	else if (result = /^set\s+((no)?([a-z]+)(=(\d+))?)$/.exec(script)) {
 		/* result:
 		 * 		[0] -> the whole string
@@ -338,6 +346,25 @@ Vim.prototype.execScript = function(script)
 		this.tab_current_wins.splice(this.tab_id+1, 0, tab);
 		this.tab_id++;
 		this.win = tab;
+	}
+	else if (result = /^w(q)?(\s+([a-zA-Z0-9._\-]+))?$/.exec(script)) {
+		/* result:
+		 * 		[0] -> the whole string
+		 * 		[1] -> "q" or undefined
+		 * 		[3] -> filename
+		 */
+		if (result[3]) this.win.buffer.name = result[3];
+		if (this.win.buffer.name == '[No Name]') {
+			this._error(32, "No file name");
+			return;
+		}
+		var file = this.fs.open(this.win.buffer.name);
+		if (file.constructor === String)
+			file = this.fs.create(this.win.buffer.name);
+		file.setData(this.win.buffer.lines.join('\n'));
+		file.close();
+		this.win.buffer.modified = false;
+		if (result[1]) this.execScript("q");
 	}
 	else if (/^help\s+iccf$/.test(script)) {
 		this.execScript("new");
@@ -658,6 +685,8 @@ VimBuffer.prototype.setText = function(text)
 
 VimBuffer.prototype.insertCharAt = function(x, y, ch)
 {
+	this.set.modified = true;
+
 	var line = this.lines[y];
 	this.lines[y] = line.slice(0, x) + ch + line.slice(x);
 }
@@ -665,12 +694,16 @@ VimBuffer.prototype.insertCharAt = function(x, y, ch)
 
 VimBuffer.prototype.newLine = function(y)
 {
+	this.set.modified = true;
+
 	this.lines.splice(y, 0, '');
 }
 
 
 VimBuffer.prototype.insertNewLine = function(x, y)
 {
+	this.set.modified = true;
+
 	var newline = this.lines[y].slice(x);
 	this.lines[y] = this.lines[y].slice(0, x);
 	this.lines.splice(y+1, 0, newline);
@@ -679,6 +712,8 @@ VimBuffer.prototype.insertNewLine = function(x, y)
 
 VimBuffer.prototype.killChar = function(x, y)
 {
+	this.set.modified = true;
+
 	var line = this.lines[y];
 	this.lines[y] = line.slice(0, x) + line.slice(x+1);
 }
@@ -686,6 +721,8 @@ VimBuffer.prototype.killChar = function(x, y)
 
 VimBuffer.prototype.killLine = function(y)
 {
+	this.set.modified = true;
+
 	this.lines.splice(y, 1);
 	if (this.lines.length == 0)
 		this.lines[0] = '';
