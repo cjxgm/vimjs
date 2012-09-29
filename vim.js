@@ -64,7 +64,6 @@ function Vim(convas, fn_quit)
 	var that = this;
 	that.convas.readKey(false, function fn(key) {
 		var ch = String.fromCharCode(key);
-		console.log(key + "   " + ch);
 		that.processKey(ch);
 		if (that.quited) return;
 		that.convas.readKey(false, fn);
@@ -165,7 +164,10 @@ Vim.prototype._doRender = function(win, x, y, w, h)
 			var buf = new ConvasBuffer(w, 1);
 			buf.color = BG_H | BG_R | BG_G | BG_B;
 			if (win === this.win) buf.color |= FG_H;
-			var status_line = formatTextTwoSides(win.buffer.name,
+			var status_line = win.buffer.name;
+			if (win.buffer.set.modified) status_line += ' [+]';
+			if (win.buffer.set.ro) status_line += ' [RO]';
+			var status_line = formatTextTwoSides(status_line,
 					win.status_line, w);
 			buf.write(status_line);
 			this.convas.renderBuffer(buf, x, y+h-1);
