@@ -11,29 +11,45 @@ var vim_cmds = [];
 
 // mode switching
 vim_cmds.push({
-	regex: /:/,
+	regex: /^:$/,
 	callback: function(vim) {
 		vim.mode = 'CMDLINE';
 	}
 });
 
 vim_cmds.push({
-	regex: /i/,
+	regex: /^i$/,
 	callback: function(vim) {
 		vim.mode = 'INSERT';
 	}
 });
 
 vim_cmds.push({
-	regex: /a/,
+	regex: /^I$/,
 	callback: function(vim) {
+		vim.win.goBOL();
+		vim.mode = 'INSERT';
+	}
+});
+
+vim_cmds.push({
+	regex: /^a$/,
+	callback: function(vim) {
+		vim.mode = 'INSERT';
 		vim.win.moveCursor(1, 0);
-		vim.mode = 'INSERT';
 	}
 });
 
 vim_cmds.push({
-	regex: /o/,
+	regex: /^A$/,
+	callback: function(vim) {
+		vim.mode = 'INSERT';
+		vim.win.goEOL();
+	}
+});
+
+vim_cmds.push({
+	regex: /^o$/,
 	callback: function(vim) {
 		vim.win.newLineAfter();
 		vim.mode = 'INSERT';
@@ -41,7 +57,7 @@ vim_cmds.push({
 });
 
 vim_cmds.push({
-	regex: /O/,
+	regex: /^O$/,
 	callback: function(vim) {
 		vim.win.newLineBefore();
 		vim.mode = 'INSERT';
@@ -51,35 +67,56 @@ vim_cmds.push({
 
 // navigation
 vim_cmds.push({
-	regex: /h/,
+	regex: /^h$/,
 	callback: function(vim) {
 		vim.win.moveCursor(-1, 0);
 	}
 });
 
 vim_cmds.push({
-	regex: /l/,
+	regex: /^l$/,
 	callback: function(vim) {
 		vim.win.moveCursor(+1, 0);
 	}
 });
 
 vim_cmds.push({
-	regex: /j/,
+	regex: /^j$/,
 	callback: function(vim) {
 		vim.win.moveCursor(0, +1);
 	}
 });
 
 vim_cmds.push({
-	regex: /k/,
+	regex: /^k$/,
 	callback: function(vim) {
 		vim.win.moveCursor(0, -1);
 	}
 });
 
 vim_cmds.push({
-	regex: /g([tT])/,
+	regex: /^\^$/,
+	callback: function(vim) {
+		vim.win.goBOL(true);
+	}
+});
+
+vim_cmds.push({
+	regex: /^0$/,
+	callback: function(vim) {
+		vim.win.goBOL();
+	}
+});
+
+vim_cmds.push({
+	regex: /^\$$/,
+	callback: function(vim) {
+		vim.win.goEOL();
+	}
+});
+
+vim_cmds.push({
+	regex: /^g([tT])$/,
 	callback: function(vim, result) {
 		/* result:
 		 * 		[0] -> the whole string
@@ -88,6 +125,37 @@ vim_cmds.push({
 		vim.tab_id += vim.tabs.length + (result[1] == "t" ? 1 : -1);
 		vim.tab_id %= vim.tabs.length;
 		vim.win = vim.tab_current_wins[vim.tab_id];
+	}
+});
+
+vim_cmds.push({
+	regex: /^w$/,
+	callback: function(vim) {
+		vim.win.goWord();
+	}
+});
+
+vim_cmds.push({
+	regex: /^W$/,
+	callback: function(vim) {
+		vim.win.goToken();
+	}
+});
+
+
+// editing
+vim_cmds.push({
+	regex: /^x$/,
+	callback: function(vim) {
+		vim.win.killChar();
+	}
+});
+
+vim_cmds.push({
+	regex: /^dd$/,
+	callback: function(vim) {
+		vim.win.buffer.killLine(vim.win.y);
+		vim.win.moveCursor(0, 0);
 	}
 });
 

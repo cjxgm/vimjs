@@ -19,7 +19,7 @@ function Vim(convas, fn_quit)
 	this.convas      = convas;
 	this.tabs        = [new VimWindow(this)];
 	this.tab_current_wins = [this.tabs[0]];
-	this.tab_id       = 0;
+	this.tab_id      = 0;
 	this.win         = this.tabs[0];
 	this.fn_quit     = fn_quit;
 	this.quited      = false;
@@ -64,6 +64,7 @@ function Vim(convas, fn_quit)
 	var that = this;
 	that.convas.readKey(false, function fn(key) {
 		var ch = String.fromCharCode(key);
+		console.log(key + "   " + ch);
 		that.processKey(ch);
 		if (that.quited) return;
 		that.convas.readKey(false, fn);
@@ -187,10 +188,19 @@ Vim.prototype._doRender = function(win, x, y, w, h)
 Vim.prototype.processKey = function(ch)
 {
 	if (this.mode == 'NORMAL') {
+		if (ch == String.fromCharCode(27)) {
+			this.is_cmd = false;
+			this.cmd = '';
+			this.repeat = '';
+			this.render();
+			return;
+		}
 		if (this.is_cmd)
 			this.cmd += ch;
 		else {
-			if (/[0-9]/.test(ch)) this.repeat += ch;
+			if (/[1-9]/.test(ch)) this.repeat += ch;
+			else if (this.repeat != '' && /[0-9]/.test(ch))
+				this.repeat += ch;
 			else {
 				this.is_cmd = true;
 				this.repeat = parseInt(this.repeat);
@@ -350,7 +360,7 @@ Vim.prototype.execScript = function(script)
 
 /**********************************************************************
  *
- * VimWindow: the viewport of a buffer
+ * VimWindow: the viewport of buffers
  *
  */
 
@@ -371,6 +381,9 @@ function VimWindow(vim, pa)
 
 VimWindow.prototype.render = function(buffer)
 {
+	if (this.y < this.line_start) this.line_start = this.y;
+	else if (this.y - this.line_start >= buffer.h)
+		this.line_start += this.y - this.line_start - buffer.h + 1;
 	var lineno_len = 0;
 	if (this.set.nu) {
 		lineno_len = this.buffer.lines.length.toString().length + 1;
@@ -380,7 +393,8 @@ VimWindow.prototype.render = function(buffer)
 	var cpos = {x:0, y:0};
 
 	var y=0;
-	for (var i=this.line_start; i<this.buffer.lines.length; i++) {
+	for (var i=this.line_start;
+			i<this.buffer.lines.length && y<buffer.h; i++) {
 		buffer.cursorTo(0, y);
 		if (this.set.nu) {
 			lineno = '';
@@ -391,17 +405,24 @@ VimWindow.prototype.render = function(buffer)
 			buffer.color = FG_H | FG_R | FG_G;
 			buffer.write(lineno);
 		}
+
 		var t = this.buffer.lines[i].split('');
 		buffer.color = FG_R | FG_G | FG_B;
 		this.ix = 0;
+
+		if (i == this.y && t.length == 0) 
+			cpos = { x: buffer.x, y: buffer.y };
+
 		for (var x=0; x<t.length; x++) {
 			if (i == this.y) {
 				if (x == this.x)
 					cpos = { x: buffer.x, y: buffer.y };
+				else if (this.vim.mode == 'INSERT' && t.length == this.x)
+					cpos = { x: buffer.x+1, y: buffer.y };
 				if (x < this.x)
 					this.ix++;
 			}
-			if (t[x] != '\x00') buffer.write(t[x]);
+			buffer.write(t[x]);
 		}
 		y++;
 	}
@@ -462,12 +483,20 @@ VimWindow.prototype.moveCursor = function(dx, dy)
 {
 	this.x += dx;
 	this.y += dy;
-	if (this.y < 0) this.y = 0;
-	else if (this.y >= this.buffer.lines.length)
+
+	if (this.y >= this.buffer.lines.length)
 		this.y = this.buffer.lines.length-1;
+	if (this.y < 0) this.y = 0;
+
+	if (this.vim.mode == 'INSERT') {
+		if (this.x > this.buffer.lines[this.y].length)
+			this.x = this.buffer.lines[this.y].length;
+	}
+	else {
+		if (this.x >= this.buffer.lines[this.y].length)
+			this.x = this.buffer.lines[this.y].length-1;
+	}
 	if (this.x < 0) this.x = 0;
-	else if (this.x >= this.buffer.lines[this.y].length)
-		this.x = this.buffer.lines[this.y].length-1;
 }
 
 
@@ -478,10 +507,71 @@ VimWindow.prototype.input = function(ch)
 		this.x = 0;
 		this.moveCursor(0, 1);
 	}
+	else if (ch == '\b') {
+		if (this.x != 0) {
+			this.moveCursor(-1, 0);
+			this.buffer.killChar(this.x, this.y);
+		}
+		else {
+			this.buffer.killLine(this.y);
+			this.moveCursor(0, -1);
+			this.goEOL();
+		}
+	}
 	else {
 		this.buffer.insertCharAt(this.x, this.y, ch);
 		this.moveCursor(1, 0);
 	}
+}
+
+
+VimWindow.prototype.goBOL = function(skip_blank)
+{
+	this.x = 0;
+	if (skip_blank) {
+		var result = /^[ \t]+/.exec(this.buffer.lines[this.y]);
+		if (result) this.moveCursor(result[0].length, 0);
+	}
+}
+
+
+VimWindow.prototype.goEOL = function()
+{
+	this.x = this.buffer.lines[this.y].length-1;
+	this.moveCursor(1, 0);
+}
+
+
+VimWindow.prototype.skipRegex = function(regex)
+{
+	var line = this.buffer.lines[this.y].slice(this.x);
+	var result = regex.exec(line);
+	if (result) result[0] = result[0].length;
+	else result = [0];		// blank line
+
+	this.x += result[0];
+	if (this.x >= this.buffer.lines[this.y].length) {
+		if (this.y == this.buffer.lines.length-1) {
+			this.moveCursor(-1, 0);
+			// and then beep...
+		}
+		else {
+			this.x = 0;
+			this.moveCursor(0, 1);
+		}
+	}
+}
+
+
+VimWindow.prototype.goWord = function()
+{
+	this.skipRegex(/^(([a-zA-Z0-9_]+|[^a-zA-Z0-9_. ]+|\.)? *)/);
+}
+
+
+VimWindow.prototype.goToken = function()
+{
+	this.skipRegex(/^([^ ]* *)/);
 }
 
 
@@ -495,6 +585,13 @@ VimWindow.prototype.newLineAfter = function(ch)
 VimWindow.prototype.newLineBefore = function(ch)
 {
 	this.buffer.newLine(this.y);
+	this.moveCursor(0, 0);	// this is a must; for adapting cursor pos
+}
+
+
+VimWindow.prototype.killChar = function()
+{
+	this.buffer.killChar(this.x, this.y);
 	this.moveCursor(0, 0);	// this is a must; for adapting cursor pos
 }
 
@@ -554,30 +651,41 @@ VimBuffer.prototype.setText = function(text)
 {
 	this.lines = text.split('\n');
 	if (!this.lines.length) this.lines[0] = "";
-	for (i in this.lines) this.lines[i] += '\x00';
 }
 
 
 VimBuffer.prototype.insertCharAt = function(x, y, ch)
 {
-	if (ch == '\r') this.lines.splice(y+1, 0, '\x00');
-	else {
-		var line = this.lines[y];
-		this.lines[y] = line.slice(0, x) + ch + line.slice(x);
-	}
+	var line = this.lines[y];
+	this.lines[y] = line.slice(0, x) + ch + line.slice(x);
 }
 
 
 VimBuffer.prototype.newLine = function(y)
 {
-	this.lines.splice(y, 0, '\x00');
+	this.lines.splice(y, 0, '');
 }
 
 
 VimBuffer.prototype.insertNewLine = function(x, y)
 {
 	var newline = this.lines[y].slice(x);
-	this.lines[y] = this.lines[y].slice(0, x) + '\x00';
+	this.lines[y] = this.lines[y].slice(0, x);
 	this.lines.splice(y+1, 0, newline);
+}
+
+
+VimBuffer.prototype.killChar = function(x, y)
+{
+	var line = this.lines[y];
+	this.lines[y] = line.slice(0, x) + line.slice(x+1);
+}
+
+
+VimBuffer.prototype.killLine = function(y)
+{
+	this.lines.splice(y, 1);
+	if (this.lines.length == 0)
+		this.lines[0] = '';
 }
 
