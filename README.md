@@ -4,6 +4,7 @@ Licensed under GPLv2. ABSOLUTELY NO WARRANTY! See COPYING for details.
 
 ## 2012-09-30 前待办
 
+* 目前仅在 Chrome 中测试正常
 * 基本编辑命令
 * 基于 local storage 的文件存储
 * 登录功能(local)
